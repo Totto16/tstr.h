@@ -95,7 +95,8 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] TStrResult tstr_reserve(tstr* s, size_t new_ca
 TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_with_capacity(size_t cap) {
 	tstr s = tstr_init();
 	if(cap > TSTR_SSO_CAP) {
-		tstr_reserve(&s, cap);
+		auto _ = tstr_reserve(&s, cap);
+		(void)_;
 	}
 	return s;
 }
@@ -337,8 +338,13 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_join(const char** strings, size_t co
 	}
 
 	for(size_t i = 0; i < count; i++) {
-		tstr_cat(&s, strings[i]);
-		if(i < count - 1) tstr_cat(&s, delim);
+		auto _ = tstr_cat(&s, strings[i]);
+		(void)_;
+		if(i < count - 1) {
+
+			auto _ = tstr_cat(&s, delim);
+			(void)_;
+		}
 	}
 	return s;
 }
@@ -595,7 +601,8 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] size_t tstr_count_runes(const tstr* s) {
 	const char* ptr = tstr_cstr(s);
 	size_t count = 0;
 	while(*ptr) {
-		tstr_next_rune(&ptr);
+		auto _ = tstr_next_rune(&ptr);
+		(void)_;
 		count++;
 	}
 	return count;

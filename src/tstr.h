@@ -100,61 +100,59 @@
 // #define T_GROWTH_FACTOR(cap) ((cap) == 0 ? 32 : (cap) + (cap) / 2)
 #endif
 
-#ifndef TSTR_H
-	#define TSTR_H
-    // [Bundled] "zcommon.h" is included inline in this same file
-	#include <ctype.h>
-	#include <stdarg.h>
-	#include <stdbool.h>
-	#include <stddef.h>
-	#include <stdint.h>
-	#include <stdio.h>
-	#include <stdlib.h>
-	#include <string.h>
+// [Bundled] "zcommon.h" is included inline in this same file
+#include <ctype.h>
+#include <stdarg.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
-    // I am thinking of you too, C++ devs.
-	#ifdef __cplusplus
+// I am thinking of you too, C++ devs.
+#ifdef __cplusplus
 extern "C" {
-	#endif
+#endif
 
 /* Configuration and Macros */
 
-	#ifndef T_STR_MALLOC
-		#define T_STR_MALLOC(sz) (char*)T_MALLOC(sz)
-	#endif
+#ifndef T_STR_MALLOC
+	#define T_STR_MALLOC(sz) (char*)T_MALLOC(sz)
+#endif
 
-	#ifndef T_STR_CALLOC
-		#define T_STR_CALLOC(n, sz) (char*)T_CALLOC(n, sz)
-	#endif
+#ifndef T_STR_CALLOC
+	#define T_STR_CALLOC(n, sz) (char*)T_CALLOC(n, sz)
+#endif
 
-	#ifndef T_STR_REALLOC
-		#define T_STR_REALLOC(p, sz) (char*)T_REALLOC(p, sz)
-	#endif
+#ifndef T_STR_REALLOC
+	#define T_STR_REALLOC(p, sz) (char*)T_REALLOC(p, sz)
+#endif
 
-	#ifndef T_STR_FREE
-		#define T_STR_FREE(p) T_FREE(p)
-	#endif
+#ifndef T_STR_FREE
+	#define T_STR_FREE(p) T_FREE(p)
+#endif
 
-	#if defined(__GNUC__) || defined(__clang__)
-		#define TSTR_PRINTF_ATTR(fmt_idx, var_idx) __attribute__((format(printf, fmt_idx, var_idx)))
-	#else
-		#define TSTR_PRINTF_ATTR(fmt_idx, var_idx)
-	#endif
+#if defined(__GNUC__) || defined(__clang__)
+	#define TSTR_PRINTF_ATTR(fmt_idx, var_idx) __attribute__((format(printf, fmt_idx, var_idx)))
+#else
+	#define TSTR_PRINTF_ATTR(fmt_idx, var_idx)
+#endif
 
-    // SSO Capacity -> 23 bytes available.
-    // Max string length = 23 chars (if using the last byte for length/flag trick)
-    // OR 22 chars + null terminator. We stick to 23 bytes total storage.
-	#define TSTR_SSO_CAP 23
-	#define TSTR_UTF8_INVALID 0xFFFD
+// SSO Capacity -> 23 bytes available.
+// Max string length = 23 chars (if using the last byte for length/flag trick)
+// OR 22 chars + null terminator. We stick to 23 bytes total storage.
+#define TSTR_SSO_CAP 23
+#define TSTR_UTF8_INVALID 0xFFFD
 
-	#ifndef TSTR_FMT
-		#define TSTR_FMT "%.*s"
-		#define TSTR_ARG(s) (int)tstr_len(&(s)), tstr_cstr(&(s))
-		#define ZSV_ARG(v) (int)(v).len, (v).data
-	#endif
+#ifndef TSTR_FMT
+	#define TSTR_FMT "%.*s"
+	#define TSTR_ARG(s) (int)tstr_len(&(s)), tstr_cstr(&(s))
+	#define ZSV_ARG(v) (int)(v).len, (v).data
+#endif
 
-    // Alias macro for pushing a single char.
-	#define tstr_push(s, c) tstr_push_char(s, c)
+// Alias macro for pushing a single char.
+#define tstr_push(s, c) tstr_push_char(s, c)
 
 /* Data Structures */
 
@@ -200,8 +198,8 @@ typedef enum : bool {
 	TStrResultOk = true,
 } TStrResult;
 
-    // maybe some visibility things later, but I just removed the static inline
-	#define TSTR_FUN_ATTRIBUTES
+// maybe some visibility things later, but I just removed the static inline
+#define TSTR_FUN_ATTRIBUTES
 
 /* Internal Helpers and Accessors */
 
@@ -251,8 +249,8 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_from_len(const char* ptr, size_t len
 // Creates a tstr from a standard C-string.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_from(const char* cstr);
 
-    // Macro for compile-time string literals (avoids runtime strlen).
-	#define tstr_lit(s) tstr_from_len((s), sizeof(s) - 1)
+// Macro for compile-time string literals (avoids runtime strlen).
+#define tstr_lit(s) tstr_from_len((s), sizeof(s) - 1)
 
 // Creates a deep copy of a tstr.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_dup(const tstr* s);
@@ -334,10 +332,10 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] size_t tstr_count_runes(const tstr* s);
 // Rejects Overlong encodings, Surrogates, and out-of-bounds values.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_is_valid_utf8(const tstr* s);
 
-    /* Views and Slices (Zero-Copy) */
+/* Views and Slices (Zero-Copy) */
 
-    // Helper macro to create a view from a string literal.
-	#define ZSV(lit) (tstr_view){ .data = (lit), .len = sizeof(lit) - 1 }
+// Helper macro to create a view from a string literal.
+#define ZSV(lit) (tstr_view){ .data = (lit), .len = sizeof(lit) - 1 }
 
 // Creates a view from a C-string.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr_view tstr_view_from(const char* cstr);
@@ -388,23 +386,23 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr_split_iter tstr_split_init(tstr_view src,
 // Gets the next part in a split iteration. Returns false when done.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_split_next(tstr_split_iter* it, tstr_view* out_part);
 
-	#ifdef __cplusplus
+#ifdef __cplusplus
 } // extern "C"
-	#endif
+#endif
 
 /* C++ Integration Layer -> namespace: tstr */
 
-	#ifdef __cplusplus
+#ifdef __cplusplus
 
-		#include <cstring>
-		#include <iostream>
-		#include <iterator>
-		#include <string>
-		#include <utility>
+	#include <cstring>
+	#include <iostream>
+	#include <iterator>
+	#include <string>
+	#include <utility>
 
-		#if __cplusplus >= 201703L
-			#include <string_view>
-		#endif
+	#if __cplusplus >= 201703L
+		#include <string_view>
+	#endif
 
 namespace z_str {
 class string;
@@ -438,9 +436,9 @@ class view {
 
 	char operator[](size_t idx) const { return inner.data[idx]; }
 
-		#if __cplusplus >= 201703L
+	#if __cplusplus >= 201703L
 	operator std::string_view() const { return std::string_view(data(), size()); }
-		#endif
+	#endif
 
 	bool starts_with(const char* prefix) const { return ::tstr_view_starts_with(inner, prefix); }
 	bool ends_with(const char* suffix) const { return ::tstr_view_ends_with(inner, suffix); }
@@ -547,10 +545,10 @@ class string {
 	// Length constructor.
 	string(const char* s, size_t len) : inner(::tstr_from_len(s, len)) {}
 
-		// This one is for C++17 so we put it like this.
-		#if __cplusplus >= 201703L
+	// This one is for C++17 so we put it like this.
+	#if __cplusplus >= 201703L
 	string(std::string_view sv) : inner(::tstr_from_len(sv.data(), sv.size())) {}
-		#endif
+	#endif
 
 	// Copy constructor.
 	string(const string& other) : inner(::tstr_dup(&other.inner)) {}
@@ -596,9 +594,9 @@ class string {
 	size_t capacity() const { return inner.is_long ? inner.l.cap : TSTR_SSO_CAP; }
 	bool is_empty() const { return ::tstr_is_empty(&inner); }
 
-		#if __cplusplus >= 201703L
+	#if __cplusplus >= 201703L
 	operator std::string_view() const { return std::string_view(data(), size()); }
-		#endif
+	#endif
 
 	// Iterators.
 	char* begin() { return ::tstr_data(&inner); }
@@ -732,4 +730,4 @@ inline bool operator!=(const char* lhs, const string& rhs) {
 }
 } // namespace z_str
 
-	#endif // __cplusplus
+#endif // __cplusplus
