@@ -1,3 +1,5 @@
+src_files += files('tstr.c', 'tstr.h')
+
 inc_dirs += include_directories('.')
 
 include_dir = get_option('prefix') / get_option('includedir')

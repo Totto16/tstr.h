@@ -16,10 +16,20 @@ project(
 
 
 inc_dirs = []
+src_files = []
 
 subdir('src')
 
+tstr_lib = library(
+    'tstr',
+    src_files,
+    include_directories: inc_dirs,
+    install: true,
+    version: meson.project_version(),
+)
+
 tstr_dep = declare_dependency(
+     link_with: tstr_lib,
     include_directories: inc_dirs,
     version: meson.project_version(),
 )
