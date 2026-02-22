@@ -1,0 +1,2 @@
+Commit used: https://github.com/z-libs/zstr.h/commit/5951a7ead6fb0fbba9afea522bb2c97172356066
+Master: https://github.com/z-libs/zstr.h

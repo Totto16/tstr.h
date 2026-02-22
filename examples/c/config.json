@@ -1,7 +1,0 @@
-{
-    "server_name": "production-node-alpha",
-    "ip_address": "192.168.1.50",
-    "max_connections": 1024,
-    "allowed_regions": "us-east,eu-west,ap-south",
-    "debug_mode": false
-}
