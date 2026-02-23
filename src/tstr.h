@@ -193,6 +193,12 @@ typedef struct {
 	bool finished;
 } tstr_split_iter;
 
+typedef struct {
+	bool ok;
+	tstr_view first;
+	tstr_view second;
+} tstr_split_result;
+
 typedef enum : bool {
 	TStrResultErr = false,
 	TStrResultOk = true,
@@ -393,8 +399,7 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_split_next(tstr_split_iter* it, tstr
 
 // Splits a tstr_view into two parts, return false if it couldn#t be split, the second part can also
 // be of length 0, if the delimiter is at the end of the src
-TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_split_once(tstr_view src, const char* delim,
-                                                       tstr_view* out_start, tstr_view* out_end);
+TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr_split_result tstr_split(tstr_view src, const char* delim);
 
 #ifdef __cplusplus
 } // extern "C"
