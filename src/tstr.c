@@ -669,27 +669,49 @@ TSTR_FUN_ATTRIBUTES tstr tstr_from_view(tstr_view v) {
 
 // Returns a substring view.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr_view tstr_sub(tstr_view v, size_t start, size_t len) {
-	if(start >= v.len) return (tstr_view){ "", 0 };
+	if(start >= v.len) {
+		return (tstr_view){ "", 0 };
+	}
 	if(start + len > v.len) len = v.len - start;
 	return (tstr_view){ .data = v.data + start, .len = len };
 }
 
 // Checks if view equals a C-string.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_view_eq(tstr_view v, const char* cstr) {
-	if(strlen(cstr) != v.len) return false;
+	if(strlen(cstr) != v.len) {
+		return false;
+	}
 	return memcmp(v.data, cstr, v.len) == 0;
+}
+
+// Checks if view equals a C-string, ignoring case (ASCII only).
+TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_view_eq_ignore_case(tstr_view v, const char* cstr) {
+	if(strlen(cstr) != v.len) {
+		return false;
+	}
+
+	for(size_t i = 0; i < v.len; i++) {
+		if(tolower((unsigned char)v.data[i]) != tolower((unsigned char)cstr[i])) {
+			return false;
+		}
+	}
+	return true;
 }
 
 // Checks if two views are equal.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_view_eq_view(tstr_view a, tstr_view b) {
-	if(a.len != b.len) return false;
+	if(a.len != b.len) {
+		return false;
+	}
 	return memcmp(a.data, b.data, a.len) == 0;
 }
 
 // Checks if view starts with prefix.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_view_starts_with(tstr_view v, const char* prefix) {
 	size_t pre_len = strlen(prefix);
-	if(pre_len > v.len) return false;
+	if(pre_len > v.len) {
+		return false;
+	}
 	return memcmp(v.data, prefix, pre_len) == 0;
 }
 

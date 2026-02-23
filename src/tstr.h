@@ -352,6 +352,9 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr_view tstr_sub(tstr_view v, size_t start, 
 // Checks if view equals a C-string.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_view_eq(tstr_view v, const char* cstr);
 
+// Checks if view equals a C-string, ignoring case (ASCII only).
+TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_view_eq_ignore_case(tstr_view v, const char* cstr);
+
 // Checks if two views are equal.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_view_eq_view(tstr_view a, tstr_view b);
 
