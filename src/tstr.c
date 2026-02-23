@@ -790,9 +790,20 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr_split_iter tstr_split_init(tstr_view src,
 	};
 }
 
+TSTR_FUN_ATTRIBUTES [[nodiscard]] static tstr_view
+tstr_iter_get_remaining(const tstr_split_iter* it) {
+
+	const char* start = it->source.data + it->current_pos;
+	size_t remaining = it->source.len - it->current_pos;
+
+	return (tstr_view){ .data = start, .len = remaining };
+}
+
 // Gets the next part in a split iteration. Returns false when done.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_split_next(tstr_split_iter* it, tstr_view* out_part) {
-	if(it->finished) return false;
+	if(it->finished) {
+		return false;
+	}
 
 	const char* start = it->source.data + it->current_pos;
 	size_t remaining = it->source.len - it->current_pos;
@@ -814,5 +825,23 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_split_next(tstr_split_iter* it, tstr
 		it->current_pos += found_at + it->delim.len;
 	}
 
+	return true;
+}
+
+// Splits a tstr_view into two parts, return false if it couldn#t be split, the second part can also
+// be of length 0, if the delimiter is at the end of the src
+TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_split_once(tstr_view src, const char* delim,
+                                                       tstr_view* out_start, tstr_view* out_end) {
+
+	tstr_split_iter iter = tstr_split_init(src, delim);
+
+	const bool result = tstr_split_next(&iter, out_start);
+
+	if(!result) {
+		// done too early
+		return false;
+	}
+
+	*out_end = tstr_iter_get_remaining(&iter);
 	return true;
 }
