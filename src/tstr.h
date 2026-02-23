@@ -335,7 +335,9 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_is_valid_utf8(const tstr* s);
 /* Views and Slices (Zero-Copy) */
 
 // Helper macro to create a view from a string literal.
-#define ZSV(lit) (tstr_view){ .data = (lit), .len = sizeof(lit) - 1 }
+#define TSTR_ZSV(lit) (tstr_view){ .data = (lit), .len = sizeof(lit) - 1 }
+
+#define TSTR_EMPTY_VIEW(lit) (tstr_view){ .data = NULL, .len = 0 }
 
 // Creates a view from a C-string.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr_view tstr_view_from(const char* cstr);
