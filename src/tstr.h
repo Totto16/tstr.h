@@ -311,8 +311,14 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] TStrResult tstr_replace(tstr* s, const char* t
 // Checks equality between two tstr objects (faster than strcmp).
 TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_eq(const tstr* a, const tstr* b);
 
+// Checks equality between two tstr objects (faster than strcmp).
+TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_eq_cstr(const tstr* a, const char* b);
+
 // Checks equality ignoring case (ASCII only).
 TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_eq_ignore_case(const tstr* a, const tstr* b);
+
+// Checks equality ignoring case (ASCII only).
+TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_eq_ignore_case_cstr(const tstr* a, const char* b);
 
 // Standard strcmp behavior for tstr objects.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] int tstr_cmp(const tstr* a, const tstr* b);

@@ -511,6 +511,16 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_eq(const tstr* a, const tstr* b) {
 	return memcmp(tstr_cstr(a), tstr_cstr(b), la) == 0;
 }
 
+// Checks equality between two tstr objects (faster than strcmp).
+TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_eq_cstr(const tstr* const a, const char* const b) {
+	size_t la = tstr_len(a);
+	size_t lb = strlen(b);
+	if(la != lb) {
+		return false;
+	}
+	return memcmp(tstr_cstr(a), b, la) == 0;
+}
+
 // Checks equality ignoring case (ASCII only).
 TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_eq_ignore_case(const tstr* a, const tstr* b) {
 	size_t len = tstr_len(a);
@@ -523,6 +533,24 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_eq_ignore_case(const tstr* a, const 
 
 	for(size_t i = 0; i < len; i++) {
 		if(tolower((unsigned char)p1[i]) != tolower((unsigned char)p2[i])) {
+			return false;
+		}
+	}
+	return true;
+}
+
+// Checks equality ignoring case (ASCII only).
+TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_eq_ignore_case_cstr(const tstr* const a,
+                                                                const char* const b) {
+	size_t len = tstr_len(a);
+	if(len != strlen(b)) {
+		return false;
+	}
+
+	const char* p1 = tstr_cstr(a);
+
+	for(size_t i = 0; i < len; i++) {
+		if(tolower((unsigned char)p1[i]) != tolower((unsigned char)b[i])) {
 			return false;
 		}
 	}
