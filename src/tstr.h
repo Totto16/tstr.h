@@ -363,6 +363,13 @@ TSTR_FUN_ATTRIBUTES tstr tstr_from_view(tstr_view v);
 // Returns a substring view.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr_view tstr_sub(tstr_view v, size_t start, size_t len);
 
+// Returns a substring view, from start until end
+TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr_view tstr_sub_until_end(tstr_view v, size_t start);
+
+// Returns the view, that starts after the first occurrence of needle, or NULL for data if not
+// found.
+TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr_view tstr_view_find(tstr_view v, const char* needle);
+
 // Checks if view equals a C-string.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_view_eq(tstr_view v, const char* cstr);
 

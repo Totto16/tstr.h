@@ -707,6 +707,32 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr_view tstr_sub(tstr_view v, size_t start, 
 	return (tstr_view){ .data = v.data + start, .len = len };
 }
 
+// Returns a substring view, from start until end
+TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr_view tstr_sub_until_end(tstr_view v, size_t start) {
+	if(start >= v.len) {
+		return (tstr_view){ .data = NULL, .len = 0 };
+	}
+
+	const size_t len = v.len - start;
+
+	return (tstr_view){ .data = v.data + start, .len = len };
+}
+
+// Returns the view, that starts after the first occurrence of needle, or NULL for data if not
+// found.
+TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr_view tstr_view_find(tstr_view v, const char* needle) {
+
+	const size_t needle_len = strlen(needle);
+
+	for(size_t i = 0; i <= v.len - needle_len; i++) {
+		if(memcmp(v.data + i, needle, needle_len) == 0) {
+			return (tstr_view){ .data = v.data + i + needle_len, .len = v.len - i - needle_len };
+		}
+	}
+
+	return (tstr_view){ .data = NULL, .len = 0 };
+}
+
 // Checks if view equals a C-string.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_view_eq(tstr_view v, const char* cstr) {
 	if(strlen(cstr) != v.len) {
