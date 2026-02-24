@@ -698,9 +698,12 @@ TSTR_FUN_ATTRIBUTES tstr tstr_from_view(tstr_view v) {
 // Returns a substring view.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr_view tstr_sub(tstr_view v, size_t start, size_t len) {
 	if(start >= v.len) {
-		return (tstr_view){ "", 0 };
+		return (tstr_view){ .data = NULL, .len = 0 };
 	}
-	if(start + len > v.len) len = v.len - start;
+	if(start + len > v.len) {
+		len = v.len - start;
+	}
+
 	return (tstr_view){ .data = v.data + start, .len = len };
 }
 
