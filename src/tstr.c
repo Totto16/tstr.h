@@ -847,15 +847,6 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr_split_iter tstr_split_init(tstr_view src,
 	};
 }
 
-TSTR_FUN_ATTRIBUTES [[nodiscard]] static tstr_view
-tstr_iter_get_remaining(const tstr_split_iter* it) {
-
-	const char* start = it->source.data + it->current_pos;
-	size_t remaining = it->source.len - it->current_pos;
-
-	return (tstr_view){ .data = start, .len = remaining };
-}
-
 // Gets the next part in a split iteration. Returns false when done.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_split_next(tstr_split_iter* it, tstr_view* out_part) {
 	if(it->finished) {
@@ -889,20 +880,19 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_split_next(tstr_split_iter* it, tstr
 // be of length 0, if the delimiter is at the end of the src
 TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr_split_result tstr_split(tstr_view src, const char* delim) {
 
-	tstr_split_iter iter = tstr_split_init(src, delim);
+	// nearly the same as tstr_view_find, but not doing the strlen twice
 
-	tstr_split_result result = { .ok = false, .first = TSTR_EMPTY_VIEW, .second = TSTR_EMPTY_VIEW };
+	const size_t delim_len = strlen(delim);
 
-	const bool success = tstr_split_next(&iter, &(result.first));
+	for(size_t i = 0; i <= src.len - delim_len; i++) {
+		if(memcmp(src.data + i, delim, delim_len) == 0) {
+			const tstr_view first = { .data = src.data, .len = i };
+			const tstr_view second = { .data = src.data + i + delim_len,
+				                       .len = src.len - i - delim_len };
 
-	if(!success) {
-		// done too early
-		result.ok = false;
-		return result;
+			return (tstr_split_result){ .ok = false, .first = first, .second = second };
+		}
 	}
 
-	result.second = tstr_iter_get_remaining(&iter);
-	result.ok = true;
-
-	return result;
+	return (tstr_split_result){ .ok = false, .first = TSTR_EMPTY_VIEW, .second = TSTR_EMPTY_VIEW };
 }
