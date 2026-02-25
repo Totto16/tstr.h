@@ -890,7 +890,7 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr_split_result tstr_split(tstr_view src, co
 			const tstr_view second = { .data = src.data + i + delim_len,
 				                       .len = src.len - i - delim_len };
 
-			return (tstr_split_result){ .ok = false, .first = first, .second = second };
+			return (tstr_split_result){ .ok = true, .first = first, .second = second };
 		}
 	}
 
