@@ -77,15 +77,6 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_init(void) {
 	return s;
 }
 
-// Initializes a static string.
-TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_static_string(const char* str, size_t len) {
-	tstr s = tstr_init();
-	s.type.inner = tstr_type_enum_static;
-	s.static_str = (tstr_static){ .ptr = str, .len = len };
-
-	return s;
-}
-
 // Frees the string if it is on the heap, and resets it to empty.
 TSTR_FUN_ATTRIBUTES void tstr_free(tstr* const s) {
 	if(s->type.inner == tstr_type_enum_long) T_STR_FREE(s->long_str.ptr);
@@ -239,6 +230,20 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_from_len(const char* ptr, size_t len
 // Creates a tstr from a standard C-string.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_from(const char* cstr) {
 	return tstr_from_len(cstr, strlen(cstr));
+}
+
+// Initializes a static string.
+TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_from_static_cstr(const char* str) {
+	return tstr_from_static_cstr_with_len(str, strlen(str));
+}
+
+// Initializes a static string with length
+TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_from_static_cstr_with_len(const char* str, size_t len) {
+	tstr s = tstr_init();
+	s.type.inner = tstr_type_enum_static;
+	s.static_str = (tstr_static){ .ptr = str, .len = len };
+
+	return s;
 }
 
 // Creates a deep copy of a tstr.

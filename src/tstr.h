@@ -255,14 +255,8 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_is_null(const tstr* s);
 
 /* Creation and Destruction */
 
-// Macro for compile-time string literals (avoids runtime strlen).
-#define tstr_static_init(s) tstr_static_string((s), sizeof(s) - 1)
-
 // Initializes an empty string {0}.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_init(void);
-
-// Initializes a static string.
-TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_static_string(const char* str, size_t len);
 
 // Frees the string if it is on the heap, and resets it to empty.
 TSTR_FUN_ATTRIBUTES void tstr_free(tstr* s);
@@ -290,6 +284,15 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_from_len(const char* ptr, size_t len
 
 // Creates a tstr from a standard C-string.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_from(const char* cstr);
+
+// Macro for compile-time string literals (avoids runtime strlen).
+#define TSTR_LIT(s) tstr_from_static_cstr_with_len((s), sizeof(s) - 1)
+
+// Initializes a static string.
+TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_from_static_cstr(const char* str);
+
+// Initializes a static string with length
+TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_from_static_cstr_with_len(const char* str, size_t len);
 
 // Creates a deep copy of a tstr.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_dup(const tstr* s);
