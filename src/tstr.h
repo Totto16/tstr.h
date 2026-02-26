@@ -291,7 +291,9 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_from(const char* cstr);
 #define TSTR_SIZE_OF_STR_LIT(s) ((sizeof(s) - 1) + (REQUIRE_STRING_LITERAL(s)))
 
 // Macro for compile-time string literals (avoids runtime strlen).
-#define TSTR_LIT(s) tstr_from_static_cstr_with_len((s), TSTR_SIZE_OF_STR_LIT(s))
+#define TSTR_LIT(s) \
+	((tstr){ .type = { .inner = tstr_type_enum_static }, \
+	         .static_str = (tstr_static){ .ptr = (s), .len = TSTR_SIZE_OF_STR_LIT(s) } })
 
 // Initializes a static string.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_from_static_cstr(const char* str);
