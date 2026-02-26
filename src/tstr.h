@@ -147,8 +147,8 @@ extern "C" {
 
 #ifndef TSTR_FMT
 	#define TSTR_FMT "%.*s"
-	#define TSTR_ARG(s) (int)tstr_len(&(s)), tstr_cstr(&(s))
-	#define ZSV_ARG(v) (int)(v).len, (v).data
+	#define TSTR_FMT_ARGS(s) ((int)tstr_len(&(s))), (tstr_cstr(&(s)))
+	#define TSV_FMT_ARG(v) ((int)(v).len), ((v).data)
 #endif
 
 // Alias macro for pushing a single char.
@@ -393,10 +393,7 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_is_valid_utf8(const tstr* s);
 /* Views and Slices (Zero-Copy) */
 
 // Helper macro to create a view from a string literal.
-#define TSTR_ZSV(lit) \
-	(tstr_view) { \
-		.data = (lit), .len = TSTR_SIZE_OF_STR_LIT(lit) \
-	}
+#define TSTR_TSV(lit) ((tstr_view){ .data = (lit), .len = TSTR_SIZE_OF_STR_LIT(lit) })
 
 #define TSTR_EMPTY_VIEW (tstr_view){ .data = NULL, .len = 0 }
 
