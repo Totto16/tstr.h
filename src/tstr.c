@@ -248,6 +248,14 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_from_static_cstr_with_len(const char
 
 // Creates a deep copy of a tstr.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_dup(const tstr* s) {
+	if(s->type.inner == tstr_type_enum_static) {
+		// if the string is a static string, just copy the ptr, it can be safely reused, the static
+		// string is never freed, and on modification we copy the contents
+		return ((tstr){ .type = { .inner = tstr_type_enum_static },
+		                .static_str =
+		                    (tstr_static){ .ptr = s->static_str.ptr, .len = s->static_str.len } });
+	}
+
 	return tstr_from_len(tstr_cstr(s), tstr_len(s));
 }
 
