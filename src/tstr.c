@@ -927,6 +927,15 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_view_eq_view(tstr_view a, tstr_view 
 	return memcmp(a.data, b.data, a.len) == 0;
 }
 
+// Standard strcmp behavior for tstr_view objects.
+TSTR_FUN_ATTRIBUTES [[nodiscard]] int tstr_view_cmp(tstr_view a, tstr_view b) {
+	if(a.len != b.len) {
+		return b.len - a.len;
+	}
+
+	return strncmp(a.data, b.data, a.len);
+}
+
 // Checks if view starts with prefix.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_view_starts_with(tstr_view v, const char* prefix) {
 	size_t pre_len = strlen(prefix);

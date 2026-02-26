@@ -425,6 +425,9 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_view_eq_ignore_case(tstr_view v, con
 // Checks if two views are equal.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_view_eq_view(tstr_view a, tstr_view b);
 
+// Standard strcmp behavior for tstr_view objects.
+TSTR_FUN_ATTRIBUTES [[nodiscard]] int tstr_view_cmp(tstr_view a, tstr_view b);
+
 // Checks if view starts with prefix.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_view_starts_with(tstr_view v, const char* prefix);
 
