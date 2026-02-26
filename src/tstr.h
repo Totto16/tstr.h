@@ -285,8 +285,13 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_from_len(const char* ptr, size_t len
 // Creates a tstr from a standard C-string.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_from(const char* cstr);
 
+#define REQUIRE_STRING_LITERAL(s) \
+	(0 * sizeof(char[1][__builtin_types_compatible_p(__typeof__(s), __typeof__(&(s)[0])) ? -1 : 1]))
+
+#define TSTR_SIZE_OF_STR_LIT(s) ((sizeof(s) - 1) + (REQUIRE_STRING_LITERAL(s)))
+
 // Macro for compile-time string literals (avoids runtime strlen).
-#define TSTR_LIT(s) tstr_from_static_cstr_with_len((s), sizeof(s) - 1)
+#define TSTR_LIT(s) tstr_from_static_cstr_with_len((s), TSTR_SIZE_OF_STR_LIT(s))
 
 // Initializes a static string.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_from_static_cstr(const char* str);
@@ -386,7 +391,10 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_is_valid_utf8(const tstr* s);
 /* Views and Slices (Zero-Copy) */
 
 // Helper macro to create a view from a string literal.
-#define TSTR_ZSV(lit) (tstr_view){ .data = (lit), .len = sizeof(lit) - 1 }
+#define TSTR_ZSV(lit) \
+	(tstr_view) { \
+		.data = (lit), .len = TSTR_SIZE_OF_STR_LIT(lit) \
+	}
 
 #define TSTR_EMPTY_VIEW (tstr_view){ .data = NULL, .len = 0 }
 
