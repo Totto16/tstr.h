@@ -1,0 +1,7 @@
+option(
+    'static_string_modification_behavior',
+    type: 'combo',
+    value: 'allocate',
+    choices: ['allocate', 'error'],
+    description: 'specify the behavior to use if you try to modify static strings:\n allocate: allocate a heap string and migrate the old one, error: error out',
+)

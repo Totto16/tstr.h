@@ -117,13 +117,27 @@ TSTR_FUN_ATTRIBUTES void tstr_clear(tstr* const s) {
 	}
 }
 
+static inline void tstr_attempt_static_string_modification(tstr* const s) {
+	if(s->type.inner != tstr_type_enum_static) {
+		return;
+	}
+
+#if TSTR_STATIC_STRING_MODIFICATION_BEHAVIOR == 0
+	*s = tstr_from_len(s->static_str.ptr, s->static_str.len);
+#elif TSTR_STATIC_STRING_MODIFICATION_BEHAVIOR == 1
+	abort();
+#else
+	#error "'TSTR_STATIC_STRING_MODIFICATION_BEHAVIOR' not defined"
+#endif
+}
+
 /* Memory Management */
 
 // Ensures the string has at least `new_cap` capacity.
 // Handles the transition from SSO (Stack) to Long (Heap).
 TSTR_FUN_ATTRIBUTES [[nodiscard]] TStrResult tstr_reserve(tstr* const s, size_t new_cap) {
 	if(s->type.inner == tstr_type_enum_static) {
-		*s = tstr_from_len(s->static_str.ptr, s->static_str.len);
+		tstr_attempt_static_string_modification(s);
 	}
 
 	if(new_cap < TSTR_SSO_CAP) {
@@ -331,7 +345,7 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_read_file(const char* path) {
 // Appends a single character to the string.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] TStrResult tstr_push_char(tstr* const s, char c) {
 	if(s->type.inner == tstr_type_enum_static) {
-		*s = tstr_from_len(s->static_str.ptr, s->static_str.len);
+		tstr_attempt_static_string_modification(s);
 	}
 
 	const size_t len = tstr_len(s);
@@ -360,7 +374,7 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] TStrResult tstr_push_char(tstr* const s, char 
 // Removes and returns the last character of the string.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] char tstr_pop_char(tstr* s) {
 	if(s->type.inner == tstr_type_enum_static) {
-		*s = tstr_from_len(s->static_str.ptr, s->static_str.len);
+		tstr_attempt_static_string_modification(s);
 	}
 
 	size_t len = tstr_len(s);
@@ -386,7 +400,7 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] char tstr_pop_char(tstr* s) {
 TSTR_FUN_ATTRIBUTES [[nodiscard]] TStrResult tstr_cat_len(tstr* const s, const char* src,
                                                           size_t src_len) {
 	if(s->type.inner == tstr_type_enum_static) {
-		*s = tstr_from_len(s->static_str.ptr, s->static_str.len);
+		tstr_attempt_static_string_modification(s);
 	}
 
 	const size_t cur_len = tstr_len(s);
@@ -474,7 +488,7 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] TStrResult tstr_fmt(tstr* const s, const char*
 	}
 
 	if(s->type.inner == tstr_type_enum_static) {
-		*s = tstr_from_len(s->static_str.ptr, s->static_str.len);
+		tstr_attempt_static_string_modification(s);
 	}
 
 	const size_t cur_len = tstr_len(s);
@@ -507,7 +521,7 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] TStrResult tstr_fmt(tstr* const s, const char*
 // Converts the string to lowercase in-place (ASCII only).
 TSTR_FUN_ATTRIBUTES void tstr_to_lower(tstr* const s) {
 	if(s->type.inner == tstr_type_enum_static) {
-		*s = tstr_from_len(s->static_str.ptr, s->static_str.len);
+		tstr_attempt_static_string_modification(s);
 	}
 
 	char* p = tstr_data(s);
@@ -520,7 +534,7 @@ TSTR_FUN_ATTRIBUTES void tstr_to_lower(tstr* const s) {
 // Converts the string to uppercase in-place (ASCII only).
 TSTR_FUN_ATTRIBUTES void tstr_to_upper(tstr* const s) {
 	if(s->type.inner == tstr_type_enum_static) {
-		*s = tstr_from_len(s->static_str.ptr, s->static_str.len);
+		tstr_attempt_static_string_modification(s);
 	}
 
 	char* p = tstr_data(s);
@@ -537,7 +551,7 @@ TSTR_FUN_ATTRIBUTES void tstr_trim(tstr* const s) {
 	}
 
 	if(s->type.inner == tstr_type_enum_static) {
-		*s = tstr_from_len(s->static_str.ptr, s->static_str.len);
+		tstr_attempt_static_string_modification(s);
 	}
 
 	char* start = tstr_data(s);
@@ -579,7 +593,7 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] TStrResult tstr_replace(tstr* s, const char* t
 	}
 
 	if(s->type.inner == tstr_type_enum_static) {
-		*s = tstr_from_len(s->static_str.ptr, s->static_str.len);
+		tstr_attempt_static_string_modification(s);
 	}
 
 	char* src = tstr_data(s);

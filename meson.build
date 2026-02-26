@@ -20,12 +20,25 @@ src_files = []
 
 subdir('src')
 
+c_args = []
+
+static_string_modification_behavior = get_option('static_string_modification_behavior')
+
+if static_string_modification_behavior == 'allocate'
+   c_args += '-DTSTR_STATIC_STRING_MODIFICATION_BEHAVIOR=0'
+elif static_string_modification_behavior == 'error'
+    c_args += '-DTSTR_STATIC_STRING_MODIFICATION_BEHAVIOR=1'
+else
+    error('invalid value for option: \'static_string_modification_behavior\': ' + static_string_modification_behavior)
+endif
+
 tstr_lib = library(
     'tstr',
     src_files,
     include_directories: inc_dirs,
     install: true,
     version: meson.project_version(),
+    c_args: c_args
 )
 
 tstr_dep = declare_dependency(
