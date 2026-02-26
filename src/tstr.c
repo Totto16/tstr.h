@@ -2,27 +2,70 @@
 
 // Returns true if the string is heap-allocated.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_is_long(const tstr* s) {
-	return s->is_long;
+	return s->type.inner == tstr_type_enum_long;
+}
+
+// Returns true if the string is SSO, allocated on the stack
+TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_is_sso(const tstr* s) {
+	return s->type.inner == tstr_type_enum_sso;
+}
+
+// Returns true if the string is a static string, alias not modifiable
+TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_is_static(const tstr* s) {
+	return s->type.inner == tstr_type_enum_static;
 }
 
 // Returns a pointer to the mutable data buffer.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] char* tstr_data(tstr* s) {
-	return s->is_long ? s->l.ptr : s->s.buf;
+	switch(s->type.inner) {
+		case tstr_type_enum_sso: return s->short_str.buf;
+		case tstr_type_enum_long: return s->long_str.ptr;
+		case tstr_type_enum_static: return NULL;
+		default: {
+			return NULL;
+		}
+	}
 }
 
 // Returns a pointer to the const data buffer (C-string compatible).
 TSTR_FUN_ATTRIBUTES [[nodiscard]] const char* tstr_cstr(const tstr* s) {
-	return s->is_long ? s->l.ptr : s->s.buf;
+	switch(s->type.inner) {
+		case tstr_type_enum_sso: return s->short_str.buf;
+		case tstr_type_enum_long: return s->long_str.ptr;
+		case tstr_type_enum_static: return s->static_str.ptr;
+		default: {
+			return NULL;
+		}
+	}
 }
 
 // Returns the current length of the string (excluding null terminator).
 TSTR_FUN_ATTRIBUTES [[nodiscard]] size_t tstr_len(const tstr* s) {
-	return s->is_long ? s->l.len : s->s.len;
+	switch(s->type.inner) {
+		case tstr_type_enum_sso: return s->short_str.len;
+		case tstr_type_enum_long: return s->long_str.len;
+		case tstr_type_enum_static: return s->static_str.len;
+		default: {
+			return 0;
+		}
+	}
 }
 
 // Returns true if the string length is 0.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_is_empty(const tstr* s) {
 	return tstr_len(s) == 0;
+}
+
+// Returns true if the underlying ptr is NULL, or the SSO string is empty
+TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_is_null(const tstr* s) {
+	switch(s->type.inner) {
+		case tstr_type_enum_sso: return s->short_str.len == 0;
+		case tstr_type_enum_long: return s->long_str.ptr == NULL;
+		case tstr_type_enum_static: return s->static_str.ptr == NULL;
+		default: {
+			return true;
+		}
+	}
 }
 
 /* Creation and Destruction */
@@ -34,20 +77,43 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_init(void) {
 	return s;
 }
 
+// Initializes a static string.
+TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_static_string(const char* str, size_t len) {
+	tstr s = tstr_init();
+	s.type.inner = tstr_type_enum_static;
+	s.static_str = (tstr_static){ .ptr = str, .len = len };
+
+	return s;
+}
+
 // Frees the string if it is on the heap, and resets it to empty.
-TSTR_FUN_ATTRIBUTES void tstr_free(tstr* s) {
-	if(s->is_long) T_STR_FREE(s->l.ptr);
+TSTR_FUN_ATTRIBUTES void tstr_free(tstr* const s) {
+	if(s->type.inner == tstr_type_enum_long) T_STR_FREE(s->long_str.ptr);
 	*s = tstr_init();
 }
 
-// Clears the content (sets length to 0) but keeps the allocated capacity.
-TSTR_FUN_ATTRIBUTES void tstr_clear(tstr* s) {
-	if(s->is_long) {
-		s->l.len = 0;
-		s->l.ptr[0] = '\0';
-	} else {
-		s->s.len = 0;
-		s->s.buf[0] = '\0';
+// Clears the content (sets length to 0) but keeps the allocated capacity. static strings get nuked
+// in favor of a SSO string
+TSTR_FUN_ATTRIBUTES void tstr_clear(tstr* const s) {
+	switch(s->type.inner) {
+		case tstr_type_enum_sso: {
+			s->short_str.len = 0;
+			s->short_str.buf[0] = '\0';
+			break;
+		}
+		case tstr_type_enum_long: {
+			s->long_str.len = 0;
+			s->long_str.ptr[0] = '\0';
+			break;
+		}
+		case tstr_type_enum_static: {
+			s->type.inner = tstr_type_enum_sso;
+			s->short_str.len = 0;
+			s->short_str.buf[0] = '\0';
+			break;
+		}
+		default: {
+		}
 	}
 }
 
@@ -55,23 +121,27 @@ TSTR_FUN_ATTRIBUTES void tstr_clear(tstr* s) {
 
 // Ensures the string has at least `new_cap` capacity.
 // Handles the transition from SSO (Stack) to Long (Heap).
-TSTR_FUN_ATTRIBUTES [[nodiscard]] TStrResult tstr_reserve(tstr* s, size_t new_cap) {
+TSTR_FUN_ATTRIBUTES [[nodiscard]] TStrResult tstr_reserve(tstr* const s, size_t new_cap) {
+	if(s->type.inner == tstr_type_enum_static) {
+		*s = tstr_from_len(s->static_str.ptr, s->static_str.len);
+	}
+
 	if(new_cap < TSTR_SSO_CAP) {
 		return TStrResultOk;
 	}
 
-	if(s->is_long && new_cap <= s->l.cap) {
+	if(s->type.inner == tstr_type_enum_long && new_cap <= s->long_str.cap) {
 		return TStrResultOk;
 	}
 
 	char* new_ptr;
-	if(s->is_long) {
-		new_ptr = T_STR_REALLOC(s->l.ptr, new_cap + 1);
+	if(s->type.inner == tstr_type_enum_long) {
+		new_ptr = T_STR_REALLOC(s->long_str.ptr, new_cap + 1);
 	} else {
 		new_ptr = T_STR_MALLOC(new_cap + 1);
 		if(new_ptr) {
-			memcpy(new_ptr, s->s.buf, s->s.len);
-			new_ptr[s->s.len] = '\0';
+			memcpy(new_ptr, s->short_str.buf, s->short_str.len);
+			new_ptr[s->short_str.len] = '\0';
 		}
 	}
 
@@ -80,13 +150,13 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] TStrResult tstr_reserve(tstr* s, size_t new_ca
 	}
 
 	// Transition state if we were short before.
-	if(!s->is_long) {
-		s->l.len = s->s.len;
-		s->is_long = 1;
+	if(s->type.inner != tstr_type_enum_long) {
+		s->long_str.len = s->short_str.len;
+		s->type.inner = tstr_type_enum_long;
 	}
 
-	s->l.ptr = new_ptr;
-	s->l.cap = new_cap;
+	s->long_str.ptr = new_ptr;
+	s->long_str.cap = new_cap;
 
 	return TStrResultOk;
 }
@@ -102,31 +172,31 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_with_capacity(size_t cap) {
 }
 
 // Reduces heap usage to fit the exact string length (or moves back to SSO if small enough).
-TSTR_FUN_ATTRIBUTES void tstr_shrink_to_fit(tstr* s) {
-	if(!s->is_long) {
+TSTR_FUN_ATTRIBUTES void tstr_shrink_to_fit(tstr* const s) {
+	if(s->type.inner != tstr_type_enum_long) {
 		return;
 	}
 
 	// Downgrade to SSO if possible.
-	if(s->l.len <= TSTR_SSO_CAP) {
+	if(s->long_str.len <= TSTR_SSO_CAP) {
 		char temp[TSTR_SSO_CAP];
-		memcpy(temp, s->l.ptr, s->l.len);
-		temp[s->l.len] = '\0';
+		memcpy(temp, s->long_str.ptr, s->long_str.len);
+		temp[s->long_str.len] = '\0';
 
-		uint8_t old_len = (uint8_t)s->l.len;
-		T_STR_FREE(s->l.ptr);
+		uint8_t old_len = (uint8_t)s->long_str.len;
+		T_STR_FREE(s->long_str.ptr);
 
-		s->is_long = 0;
-		memcpy(s->s.buf, temp, old_len + 1);
-		s->s.len = old_len;
+		s->type.inner = tstr_type_enum_sso;
+		memcpy(s->short_str.buf, temp, old_len + 1);
+		s->short_str.len = old_len;
 		return;
 	}
 
-	if(s->l.len < s->l.cap) {
-		char* new_ptr = T_STR_REALLOC(s->l.ptr, s->l.len + 1);
+	if(s->long_str.len < s->long_str.cap) {
+		char* new_ptr = T_STR_REALLOC(s->long_str.ptr, s->long_str.len + 1);
 		if(new_ptr) {
-			s->l.ptr = new_ptr;
-			s->l.cap = s->l.len;
+			s->long_str.ptr = new_ptr;
+			s->long_str.cap = s->long_str.len;
 		}
 	}
 }
@@ -140,14 +210,14 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_from_len(const char* ptr, size_t len
 		if(tstr_reserve(&s, len) != TStrResultOk) {
 			return s;
 		}
-		memcpy(s.l.ptr, ptr, len);
-		s.l.ptr[len] = '\0';
-		s.l.len = len;
+		memcpy(s.long_str.ptr, ptr, len);
+		s.long_str.ptr[len] = '\0';
+		s.long_str.len = len;
 	} else {
-		memcpy(s.s.buf, ptr, len);
-		s.s.buf[len] = '\0';
-		s.s.len = (uint8_t)len;
-		s.is_long = 0;
+		memcpy(s.short_str.buf, ptr, len);
+		s.short_str.buf[len] = '\0';
+		s.short_str.len = (uint8_t)len;
+		s.type.inner = tstr_type_enum_sso;
 	}
 	return s;
 }
@@ -156,9 +226,6 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_from_len(const char* ptr, size_t len
 TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_from(const char* cstr) {
 	return tstr_from_len(cstr, strlen(cstr));
 }
-
-// Macro for compile-time string literals (avoids runtime strlen).
-#define tstr_lit(s) tstr_from_len((s), sizeof(s) - 1)
 
 // Creates a deep copy of a tstr.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_dup(const tstr* s) {
@@ -170,16 +237,16 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_own(char* ptr, size_t len, size_t ca
 	tstr s = tstr_init();
 
 	if(cap <= TSTR_SSO_CAP) {
-		memcpy(s.s.buf, ptr, len);
-		s.s.buf[len] = '\0';
-		s.s.len = (uint8_t)len;
-		s.is_long = 0;
+		memcpy(s.short_str.buf, ptr, len);
+		s.short_str.buf[len] = '\0';
+		s.short_str.len = (uint8_t)len;
+		s.type.inner = tstr_type_enum_sso;
 		T_STR_FREE(ptr);
 	} else {
-		s.is_long = 1;
-		s.l.ptr = ptr;
-		s.l.len = len;
-		s.l.cap = cap;
+		s.type.inner = tstr_type_enum_long;
+		s.long_str.ptr = ptr;
+		s.long_str.len = len;
+		s.long_str.cap = cap;
 	}
 	return s;
 }
@@ -188,13 +255,25 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_own(char* ptr, size_t len, size_t ca
 TSTR_FUN_ATTRIBUTES [[nodiscard]] char* tstr_take(tstr* s) {
 	char* ptr;
 
-	if(s->is_long) {
-		ptr = s->l.ptr;
-	} else {
-		ptr = T_STR_MALLOC(s->s.len + 1);
-		if(ptr) {
-			memcpy(ptr, s->s.buf, s->s.len);
-			ptr[s->s.len] = '\0';
+	switch(s->type.inner) {
+		case tstr_type_enum_sso: {
+			ptr = T_STR_MALLOC(s->short_str.len + 1);
+			if(ptr) {
+				memcpy(ptr, s->short_str.buf, s->short_str.len);
+				ptr[s->short_str.len] = '\0';
+			}
+			break;
+		}
+		case tstr_type_enum_long: {
+			ptr = s->long_str.ptr;
+			break;
+		}
+		case tstr_type_enum_static: {
+			// can't take ownership of the static string
+			ptr = NULL;
+		}
+		default: {
+			ptr = NULL;
 		}
 	}
 
@@ -228,21 +307,37 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_read_file(const char* path) {
 	size_t read_count = fread(buf, 1, (size_t)length, f);
 	buf[read_count] = '\0';
 
-	if(s.is_long)
-		s.l.len = read_count;
-	else
-		s.s.len = (uint8_t)read_count;
+	if(s.type.inner == tstr_type_enum_long) {
+		s.long_str.len = read_count;
+	} else {
+		s.short_str.len = (uint8_t)read_count;
+	}
 
 	fclose(f);
 	return s;
 }
 
+[[nodiscard]] static inline size_t tstr_get_cap(const tstr* const s) {
+	switch(s->type.inner) {
+		case tstr_type_enum_sso: return TSTR_SSO_CAP;
+		case tstr_type_enum_long: return s->long_str.cap;
+		case tstr_type_enum_static: return s->static_str.len;
+		default: {
+			return 0;
+		}
+	}
+}
+
 // Appends a single character to the string.
-TSTR_FUN_ATTRIBUTES [[nodiscard]] TStrResult tstr_push_char(tstr* s, char c) {
-	size_t len = tstr_len(s);
-	if(len + 1 >= (s->is_long ? s->l.cap : TSTR_SSO_CAP)) {
-		size_t cap = s->is_long ? s->l.cap : TSTR_SSO_CAP;
-		size_t new_cap = T_GROWTH_FACTOR(cap);
+TSTR_FUN_ATTRIBUTES [[nodiscard]] TStrResult tstr_push_char(tstr* const s, char c) {
+	if(s->type.inner == tstr_type_enum_static) {
+		*s = tstr_from_len(s->static_str.ptr, s->static_str.len);
+	}
+
+	const size_t len = tstr_len(s);
+	const size_t cap = tstr_get_cap(s);
+	if(len + 1 >= cap) {
+		const size_t new_cap = T_GROWTH_FACTOR(cap);
 
 		if(tstr_reserve(s, new_cap) != TStrResultOk) {
 			return TStrResultErr;
@@ -253,10 +348,10 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] TStrResult tstr_push_char(tstr* s, char c) {
 	p[len] = c;
 	p[len + 1] = '\0';
 
-	if(s->is_long) {
-		s->l.len++;
+	if(s->type.inner == tstr_type_enum_long) {
+		s->long_str.len++;
 	} else {
-		s->s.len++;
+		s->short_str.len++;
 	}
 
 	return TStrResultOk;
@@ -264,35 +359,52 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] TStrResult tstr_push_char(tstr* s, char c) {
 
 // Removes and returns the last character of the string.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] char tstr_pop_char(tstr* s) {
+	if(s->type.inner == tstr_type_enum_static) {
+		*s = tstr_from_len(s->static_str.ptr, s->static_str.len);
+	}
+
 	size_t len = tstr_len(s);
-	if(len == 0) return '\0';
+
+	if(len == 0) {
+		return '\0';
+	}
 
 	char* p = tstr_data(s);
 	char c = p[len - 1];
 	p[len - 1] = '\0';
 
-	if(s->is_long)
-		s->l.len--;
-	else
-		s->s.len--;
+	if(s->type.inner == tstr_type_enum_long) {
+		s->long_str.len--;
+	} else {
+		s->short_str.len--;
+	}
 
 	return c;
 }
 
 // Appends a raw char buffer of known length.
-TSTR_FUN_ATTRIBUTES [[nodiscard]] TStrResult tstr_cat_len(tstr* s, const char* src,
+TSTR_FUN_ATTRIBUTES [[nodiscard]] TStrResult tstr_cat_len(tstr* const s, const char* src,
                                                           size_t src_len) {
-	size_t cur_len = tstr_len(s);
-	size_t req_cap = cur_len + src_len;
+	if(s->type.inner == tstr_type_enum_static) {
+		*s = tstr_from_len(s->static_str.ptr, s->static_str.len);
+	}
 
-	if(req_cap >= (s->is_long ? s->l.cap : TSTR_SSO_CAP)) {
-		size_t new_cap = s->is_long ? s->l.cap : TSTR_SSO_CAP;
+	const size_t cur_len = tstr_len(s);
+	const size_t req_cap = cur_len + src_len;
+
+	const size_t cap = tstr_get_cap(s);
+
+	if(req_cap >= cap) {
+		size_t new_cap = cap;
 		// Logic fixed: starting cap is 23. If we grow, we just multiply.
 		// We do not fallback to 32 because 23 > 0.
-		if(new_cap == 0) new_cap = TSTR_SSO_CAP;
+		if(new_cap == 0) {
+			new_cap = TSTR_SSO_CAP;
+		}
 
-		while(new_cap <= req_cap)
+		while(new_cap <= req_cap) {
 			new_cap = T_GROWTH_FACTOR(new_cap);
+		}
 
 		if(tstr_reserve(s, new_cap) != TStrResultOk) {
 			return TStrResultErr;
@@ -303,10 +415,10 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] TStrResult tstr_cat_len(tstr* s, const char* s
 	memcpy(dest + cur_len, src, src_len);
 	dest[cur_len + src_len] = '\0';
 
-	if(s->is_long) {
-		s->l.len += src_len;
+	if(s->type.inner == tstr_type_enum_long) {
+		s->long_str.len += src_len;
 	} else {
-		s->s.len += (uint8_t)src_len;
+		s->short_str.len += (uint8_t)src_len;
 	}
 
 	return TStrResultOk;
@@ -351,7 +463,7 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_join(const char** strings, size_t co
 
 // Formats a string (printf style) and appends it.
 TSTR_PRINTF_ATTR(2, 3)
-TSTR_FUN_ATTRIBUTES [[nodiscard]] TStrResult tstr_fmt(tstr* s, const char* fmt, ...) {
+TSTR_FUN_ATTRIBUTES [[nodiscard]] TStrResult tstr_fmt(tstr* const s, const char* fmt, ...) {
 	va_list args;
 	va_start(args, fmt);
 	int len = vsnprintf(NULL, 0, fmt, args);
@@ -361,10 +473,16 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] TStrResult tstr_fmt(tstr* s, const char* fmt, 
 		return TStrResultErr;
 	}
 
-	size_t cur_len = tstr_len(s);
-	size_t req_cap = cur_len + len;
+	if(s->type.inner == tstr_type_enum_static) {
+		*s = tstr_from_len(s->static_str.ptr, s->static_str.len);
+	}
 
-	if(req_cap >= (s->is_long ? s->l.cap : TSTR_SSO_CAP)) {
+	const size_t cur_len = tstr_len(s);
+	const size_t req_cap = cur_len + len;
+
+	const size_t cap = tstr_get_cap(s);
+
+	if(req_cap >= cap) {
 		if(tstr_reserve(s, req_cap) != TStrResultOk) {
 			return TStrResultErr;
 		}
@@ -375,10 +493,10 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] TStrResult tstr_fmt(tstr* s, const char* fmt, 
 	vsnprintf(buf + cur_len, len + 1, fmt, args);
 	va_end(args);
 
-	if(s->is_long) {
-		s->l.len += len;
+	if(s->type.inner == tstr_type_enum_long) {
+		s->long_str.len += len;
 	} else {
-		s->s.len += (uint8_t)len;
+		s->short_str.len += (uint8_t)len;
 	}
 
 	return TStrResultOk;
@@ -387,7 +505,11 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] TStrResult tstr_fmt(tstr* s, const char* fmt, 
 /* In-Place Transformations */
 
 // Converts the string to lowercase in-place (ASCII only).
-TSTR_FUN_ATTRIBUTES void tstr_to_lower(tstr* s) {
+TSTR_FUN_ATTRIBUTES void tstr_to_lower(tstr* const s) {
+	if(s->type.inner == tstr_type_enum_static) {
+		*s = tstr_from_len(s->static_str.ptr, s->static_str.len);
+	}
+
 	char* p = tstr_data(s);
 	size_t len = tstr_len(s);
 	for(size_t i = 0; i < len; i++) {
@@ -396,7 +518,11 @@ TSTR_FUN_ATTRIBUTES void tstr_to_lower(tstr* s) {
 }
 
 // Converts the string to uppercase in-place (ASCII only).
-TSTR_FUN_ATTRIBUTES void tstr_to_upper(tstr* s) {
+TSTR_FUN_ATTRIBUTES void tstr_to_upper(tstr* const s) {
+	if(s->type.inner == tstr_type_enum_static) {
+		*s = tstr_from_len(s->static_str.ptr, s->static_str.len);
+	}
+
 	char* p = tstr_data(s);
 	size_t len = tstr_len(s);
 	for(size_t i = 0; i < len; i++) {
@@ -405,8 +531,14 @@ TSTR_FUN_ATTRIBUTES void tstr_to_upper(tstr* s) {
 }
 
 // Removes leading and trailing whitespace in-place.
-TSTR_FUN_ATTRIBUTES void tstr_trim(tstr* s) {
-	if(tstr_len(s) == 0) return;
+TSTR_FUN_ATTRIBUTES void tstr_trim(tstr* const s) {
+	if(tstr_len(s) == 0) {
+		return;
+	}
+
+	if(s->type.inner == tstr_type_enum_static) {
+		*s = tstr_from_len(s->static_str.ptr, s->static_str.len);
+	}
 
 	char* start = tstr_data(s);
 	char* end = start + tstr_len(s) - 1;
@@ -431,10 +563,11 @@ TSTR_FUN_ATTRIBUTES void tstr_trim(tstr* s) {
 		start[final_len] = '\0';
 	}
 
-	if(s->is_long)
-		s->l.len = final_len;
-	else
-		s->s.len = (uint8_t)final_len;
+	if(s->type.inner == tstr_type_enum_long) {
+		s->long_str.len = final_len;
+	} else {
+		s->short_str.len = (uint8_t)final_len;
+	}
 }
 
 // Replaces all occurrences of "target" with "replacement".
@@ -443,6 +576,10 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] TStrResult tstr_replace(tstr* s, const char* t
                                                           const char* replacement) {
 	if(!target || !*target) {
 		return TStrResultErr;
+	}
+
+	if(s->type.inner == tstr_type_enum_static) {
+		*s = tstr_from_len(s->static_str.ptr, s->static_str.len);
 	}
 
 	char* src = tstr_data(s);
@@ -487,10 +624,10 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] TStrResult tstr_replace(tstr* s, const char* t
 
 	strcpy(curr_dest, curr_src);
 
-	if(res.is_long) {
-		res.l.len = new_len;
+	if(res.type.inner == tstr_type_enum_long) {
+		res.long_str.len = new_len;
 	} else {
-		res.s.len = (uint8_t)new_len;
+		res.short_str.len = (uint8_t)new_len;
 	}
 
 	tstr_free(s);

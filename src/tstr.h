@@ -169,13 +169,33 @@ typedef struct {
 	uint8_t len;
 } tstr_short;
 
+// static (readonly string)
+typedef struct {
+	const char* ptr;
+	size_t len;
+} tstr_static;
+
+typedef enum : uint8_t {
+	tstr_type_enum_sso = 0,
+	tstr_type_enum_long = 1,
+	tstr_type_enum_static = 2,
+} tstr_type_enum;
+
+typedef struct {
+	tstr_type_enum inner;
+	uint8_t _pad[sizeof(void*) - sizeof(tstr_type_enum)]; // Padding for alignment
+} tstr_type;
+
+// assert that the type is the appropiate size
+static_assert(sizeof(tstr_type) == sizeof(void*));
+
 // The main string type.
 typedef struct {
-	uint8_t is_long;
-	char _pad[7]; // Padding for alignment on 64-bit systems.
+	tstr_type type;
 	union {
-		tstr_long l;
-		tstr_short s;
+		tstr_long long_str;
+		tstr_short short_str;
+		tstr_static static_str;
 	};
 } tstr;
 
@@ -212,6 +232,12 @@ typedef enum : bool {
 // Returns true if the string is heap-allocated.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_is_long(const tstr* s);
 
+// Returns true if the string is SSO, allocated on the stack
+TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_is_sso(const tstr* s);
+
+// Returns true if the string is a static string, alias not modifiable
+TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_is_static(const tstr* s);
+
 // Returns a pointer to the mutable data buffer.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] char* tstr_data(tstr* s);
 
@@ -224,21 +250,30 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] size_t tstr_len(const tstr* s);
 // Returns true if the string length is 0.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_is_empty(const tstr* s);
 
+// Returns true if the underlying ptr is NULL, or the SSO string is empty
+TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_is_null(const tstr* s);
+
 /* Creation and Destruction */
+
+// Macro for compile-time string literals (avoids runtime strlen).
+#define tstr_static_init(s) tstr_static_string((s), sizeof(s) - 1)
 
 // Initializes an empty string {0}.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_init(void);
 
+// Initializes a static string.
+TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_static_string(const char* str, size_t len);
+
 // Frees the string if it is on the heap, and resets it to empty.
 TSTR_FUN_ATTRIBUTES void tstr_free(tstr* s);
 
-// Clears the content (sets length to 0) but keeps the allocated capacity.
+// Clears the content (sets length to 0) but keeps the allocated capacity. static strings get nuked in favor of a SSO string
 TSTR_FUN_ATTRIBUTES void tstr_clear(tstr* s);
 
 /* Memory Management */
 
 // Ensures the string has at least `new_cap` capacity.
-// Handles the transition from SSO (Stack) to Long (Heap).
+// Handles the transition from SSO (Stack) or static string to Long (Heap).
 TSTR_FUN_ATTRIBUTES [[nodiscard]] TStrResult tstr_reserve(tstr* s, size_t new_cap);
 
 // Creates a new empty string with pre-allocated capacity on the heap.
@@ -254,9 +289,6 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_from_len(const char* ptr, size_t len
 
 // Creates a tstr from a standard C-string.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_from(const char* cstr);
-
-// Macro for compile-time string literals (avoids runtime strlen).
-#define tstr_lit(s) tstr_from_len((s), sizeof(s) - 1)
 
 // Creates a deep copy of a tstr.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_dup(const tstr* s);
