@@ -265,6 +265,14 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_own(char* ptr, size_t len, size_t ca
 	return s;
 }
 
+TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_own_cstr(char* ptr) {
+	const size_t size = strlen(ptr);
+
+	const tstr result = tstr_own(ptr, size, size);
+
+	return result;
+}
+
 // Releases ownership. Returns a malloc'd pointer the user MUST free.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] char* tstr_take(tstr* s) {
 	char* ptr;

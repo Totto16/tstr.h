@@ -267,7 +267,8 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_static_string(const char* str, size_
 // Frees the string if it is on the heap, and resets it to empty.
 TSTR_FUN_ATTRIBUTES void tstr_free(tstr* s);
 
-// Clears the content (sets length to 0) but keeps the allocated capacity. static strings get nuked in favor of a SSO string
+// Clears the content (sets length to 0) but keeps the allocated capacity. static strings get nuked
+// in favor of a SSO string
 TSTR_FUN_ATTRIBUTES void tstr_clear(tstr* s);
 
 /* Memory Management */
@@ -295,6 +296,9 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_dup(const tstr* s);
 
 // Takes ownership of a malloc'd pointer.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_own(char* ptr, size_t len, size_t cap);
+
+// Takes ownership of a malloc'd pointer, it gets the length and capacity from strlen()
+TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_own_cstr(char* ptr);
 
 // Releases ownership. Returns a malloc'd pointer the user MUST free.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] char* tstr_take(tstr* s);
