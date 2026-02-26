@@ -148,7 +148,7 @@ extern "C" {
 #ifndef TSTR_FMT
 	#define TSTR_FMT "%.*s"
 	#define TSTR_FMT_ARGS(s) ((int)tstr_len(&(s))), (tstr_cstr(&(s)))
-	#define TSV_FMT_ARG(v) ((int)(v).len), ((v).data)
+	#define TSV_FMT_ARGS(v) ((int)(v).len), ((v).data)
 #endif
 
 // Alias macro for pushing a single char.
