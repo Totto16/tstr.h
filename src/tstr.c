@@ -306,9 +306,11 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] char* tstr_take(tstr* s) {
 		case tstr_type_enum_static: {
 			// can't take ownership of the static string
 			ptr = NULL;
+			break;
 		}
 		default: {
 			ptr = NULL;
+			break;
 		}
 	}
 
