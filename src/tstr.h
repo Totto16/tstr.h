@@ -147,12 +147,12 @@ extern "C" {
 
 #ifndef TSTR_FMT
 	#define TSTR_FMT "%.*s"
-	#define TSTR_FMT_ARGS(s) ((int)tstr_len(&(s))), (tstr_cstr(&(s)))
-	#define TSV_FMT_ARGS(v) ((int)(v).len), ((v).data)
+	#define TSTR_FMT_ARGS(str) ((int)tstr_len(&(str))), (tstr_cstr(&(str)))
+	#define TSV_FMT_ARGS(str_vw) ((int)(str_vw).len), ((str_vw).data)
 #endif
 
 // Alias macro for pushing a single char.
-#define tstr_push(s, c) tstr_push_char(s, c)
+#define tstr_push(str, chr) tstr_push_char(str, chr)
 
 /* Data Structures */
 
@@ -230,28 +230,28 @@ typedef enum : bool {
 /* Internal Helpers and Accessors */
 
 // Returns true if the string is heap-allocated.
-TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_is_long(const tstr* s);
+TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_is_long(const tstr* str);
 
 // Returns true if the string is SSO, allocated on the stack
-TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_is_sso(const tstr* s);
+TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_is_sso(const tstr* str);
 
 // Returns true if the string is a static string, alias not modifiable
-TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_is_static(const tstr* s);
+TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_is_static(const tstr* str);
 
 // Returns a pointer to the mutable data buffer.
-TSTR_FUN_ATTRIBUTES [[nodiscard]] char* tstr_data(tstr* s);
+TSTR_FUN_ATTRIBUTES [[nodiscard]] char* tstr_data(tstr* str);
 
 // Returns a pointer to the const data buffer (C-string compatible).
-TSTR_FUN_ATTRIBUTES [[nodiscard]] const char* tstr_cstr(const tstr* s);
+TSTR_FUN_ATTRIBUTES [[nodiscard]] const char* tstr_cstr(const tstr* str);
 
 // Returns the current length of the string (excluding null terminator).
-TSTR_FUN_ATTRIBUTES [[nodiscard]] size_t tstr_len(const tstr* s);
+TSTR_FUN_ATTRIBUTES [[nodiscard]] size_t tstr_len(const tstr* str);
 
 // Returns true if the string length is 0.
-TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_is_empty(const tstr* s);
+TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_is_empty(const tstr* str);
 
 // Returns true if the underlying ptr is NULL, or the SSO string is empty
-TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_is_null(const tstr* s);
+TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_is_null(const tstr* str);
 
 /* Creation and Destruction */
 
@@ -259,23 +259,23 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_is_null(const tstr* s);
 TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_init(void);
 
 // Frees the string if it is on the heap, and resets it to empty.
-TSTR_FUN_ATTRIBUTES void tstr_free(tstr* s);
+TSTR_FUN_ATTRIBUTES void tstr_free(tstr* str);
 
 // Clears the content (sets length to 0) but keeps the allocated capacity. static strings get nuked
 // in favor of a SSO string
-TSTR_FUN_ATTRIBUTES void tstr_clear(tstr* s);
+TSTR_FUN_ATTRIBUTES void tstr_clear(tstr* str);
 
 /* Memory Management */
 
 // Ensures the string has at least `new_cap` capacity.
 // Handles the transition from SSO (Stack) or static string to Long (Heap).
-TSTR_FUN_ATTRIBUTES [[nodiscard]] TStrResult tstr_reserve(tstr* s, size_t new_cap);
+TSTR_FUN_ATTRIBUTES [[nodiscard]] TStrResult tstr_reserve(tstr* str, size_t new_cap);
 
 // Creates a new empty string with pre-allocated capacity on the heap.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_with_capacity(size_t cap);
 
 // Reduces heap usage to fit the exact string length (or moves back to SSO if small enough).
-TSTR_FUN_ATTRIBUTES void tstr_shrink_to_fit(tstr* s);
+TSTR_FUN_ATTRIBUTES void tstr_shrink_to_fit(tstr* str);
 
 /* Construction Helpers */
 
@@ -285,15 +285,17 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_from_len(const char* ptr, size_t len
 // Creates a tstr from a standard C-string.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_from(const char* cstr);
 
-#define REQUIRE_STRING_LITERAL(s) \
-	(0 * sizeof(char[1][__builtin_types_compatible_p(__typeof__(s), __typeof__(&(s)[0])) ? -1 : 1]))
+#define REQUIRE_STRING_LITERAL(str) \
+	(0 * \
+	 sizeof( \
+	     char[1][__builtin_types_compatible_p(__typeof__(str), __typeof__(&(str)[0])) ? -1 : 1]))
 
-#define TSTR_SIZE_OF_STR_LIT(s) ((sizeof(s) - 1) + (REQUIRE_STRING_LITERAL(s)))
+#define TSTR_SIZE_OF_STR_LIT(str) ((sizeof(str) - 1) + (REQUIRE_STRING_LITERAL(str)))
 
 // Macro for compile-time string literals (avoids runtime strlen).
-#define TSTR_LIT(s) \
+#define TSTR_LIT(str) \
 	((tstr){ .type = { .inner = tstr_type_enum_static }, \
-	         .static_str = (tstr_static){ .ptr = (s), .len = TSTR_SIZE_OF_STR_LIT(s) } })
+	         .static_str = (tstr_static){ .ptr = (str), .len = TSTR_SIZE_OF_STR_LIT(str) } })
 
 // Initializes a static string.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_from_static_cstr(const char* str);
@@ -302,7 +304,7 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_from_static_cstr(const char* str);
 TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_from_static_cstr_with_len(const char* str, size_t len);
 
 // Creates a deep copy of a tstr.
-TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_dup(const tstr* s);
+TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_dup(const tstr* str);
 
 // Takes ownership of a malloc'd pointer.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_own(char* ptr, size_t len, size_t cap);
@@ -311,84 +313,85 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_own(char* ptr, size_t len, size_t ca
 TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_own_cstr(char* ptr);
 
 // Releases ownership. Returns a malloc'd pointer the user MUST free.
-TSTR_FUN_ATTRIBUTES [[nodiscard]] char* tstr_take(tstr* s);
+TSTR_FUN_ATTRIBUTES [[nodiscard]] char* tstr_take(tstr* str);
 
 // Reads an entire file into a tstr. Returns empty on failure.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_read_file(const char* path);
 
 // Appends a single character to the string.
-TSTR_FUN_ATTRIBUTES [[nodiscard]] TStrResult tstr_push_char(tstr* s, char c);
+TSTR_FUN_ATTRIBUTES [[nodiscard]] TStrResult tstr_push_char(tstr* str, char chr);
 
 // Removes and returns the last character of the string.
-TSTR_FUN_ATTRIBUTES [[nodiscard]] char tstr_pop_char(tstr* s);
+TSTR_FUN_ATTRIBUTES [[nodiscard]] char tstr_pop_char(tstr* str);
 
 // Appends a raw char buffer of known length.
-TSTR_FUN_ATTRIBUTES [[nodiscard]] TStrResult tstr_cat_len(tstr* s, const char* src, size_t src_len);
+TSTR_FUN_ATTRIBUTES [[nodiscard]] TStrResult tstr_cat_len(tstr* str, const char* src,
+                                                          size_t src_len);
 
 // Appends a null-terminated C-string.
-TSTR_FUN_ATTRIBUTES [[nodiscard]] TStrResult tstr_cat(tstr* s, const char* cstr);
+TSTR_FUN_ATTRIBUTES [[nodiscard]] TStrResult tstr_cat(tstr* str, const char* cstr);
 
 // Joins an array of strings with a delimiter.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_join(const char** strings, size_t count,
                                                  const char* delim);
 
 // Formats a string (printf style) and appends it.
-TSTR_PRINTF_ATTR(2, 3)
-TSTR_FUN_ATTRIBUTES [[nodiscard]] TStrResult tstr_fmt(tstr* s, const char* fmt, ...);
+[[nodiscard]] TSTR_PRINTF_ATTR(2, 3) TSTR_FUN_ATTRIBUTES TStrResult
+    tstr_fmt(tstr* str, const char* fmt, ...);
 
 /* In-Place Transformations */
 
 // Converts the string to lowercase in-place (ASCII only).
-TSTR_FUN_ATTRIBUTES void tstr_to_lower(tstr* s);
+TSTR_FUN_ATTRIBUTES void tstr_to_lower(tstr* str);
 
 // Converts the string to uppercase in-place (ASCII only).
-TSTR_FUN_ATTRIBUTES void tstr_to_upper(tstr* s);
+TSTR_FUN_ATTRIBUTES void tstr_to_upper(tstr* str);
 
 // Removes leading and trailing whitespace in-place.
-TSTR_FUN_ATTRIBUTES void tstr_trim(tstr* s);
+TSTR_FUN_ATTRIBUTES void tstr_trim(tstr* str);
 
 // Replaces all occurrences of "target" with "replacement".
 // This may reallocate the string if the size grows.
-TSTR_FUN_ATTRIBUTES [[nodiscard]] TStrResult tstr_replace(tstr* s, const char* target,
+TSTR_FUN_ATTRIBUTES [[nodiscard]] TStrResult tstr_replace(tstr* str, const char* target,
                                                           const char* replacement);
 
 /* Comparison */
 
 // Checks equality between two tstr objects (faster than strcmp).
-TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_eq(const tstr* a, const tstr* b);
+TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_eq(const tstr* str1, const tstr* str2);
 
 // Checks equality between two tstr objects (faster than strcmp).
-TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_eq_cstr(const tstr* a, const char* b);
+TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_eq_cstr(const tstr* str1, const char* str2);
 
 // Checks equality ignoring case (ASCII only).
-TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_eq_ignore_case(const tstr* a, const tstr* b);
+TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_eq_ignore_case(const tstr* str1, const tstr* str2);
 
 // Checks equality ignoring case (ASCII only).
-TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_eq_ignore_case_cstr(const tstr* a, const char* b);
+TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_eq_ignore_case_cstr(const tstr* str1, const char* str2);
 
 // Standard strcmp behavior for tstr objects.
-TSTR_FUN_ATTRIBUTES [[nodiscard]] int tstr_cmp(const tstr* a, const tstr* b);
+TSTR_FUN_ATTRIBUTES [[nodiscard]] int tstr_cmp(const tstr* str1, const tstr* str2);
 
 /* Search */
 
 // Returns the index of the first occurrence of needle, or -1 if not found.
-TSTR_FUN_ATTRIBUTES [[nodiscard]] ptrdiff_t tstr_find(const tstr* s, const char* needle);
+TSTR_FUN_ATTRIBUTES [[nodiscard]] ptrdiff_t tstr_find(const tstr* str, const char* needle);
 
 // Returns true if the string contains the substring.
-TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_contains(const tstr* s, const char* needle);
+TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_contains(const tstr* str, const char* needle);
 
 /* UTF-8 Support */
 
 // Decodes the next rune from the pointer and advances the pointer.
 // Returns TSTR_UTF8_INVALID (0xFFFD) on error.
-TSTR_FUN_ATTRIBUTES [[nodiscard]] uint32_t tstr_next_rune(const char** p);
+TSTR_FUN_ATTRIBUTES [[nodiscard]] uint32_t tstr_next_rune(const char** ptr);
 
 // Counts the number of actual UTF-8 Runes, not bytes.
-TSTR_FUN_ATTRIBUTES [[nodiscard]] size_t tstr_count_runes(const tstr* s);
+TSTR_FUN_ATTRIBUTES [[nodiscard]] size_t tstr_count_runes(const tstr* str);
 
 // Validates that the string is strictly valid UTF-8.
 // Rejects Overlong encodings, Surrogates, and out-of-bounds values.
-TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_is_valid_utf8(const tstr* s);
+TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_is_valid_utf8(const tstr* str);
 
 /* Views and Slices (Zero-Copy) */
 
@@ -401,63 +404,63 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_is_valid_utf8(const tstr* s);
 TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr_view tstr_view_from(const char* cstr);
 
 // Creates a view covering the entire tstr.
-TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr_view tstr_as_view(const tstr* s);
+TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr_view tstr_as_view(const tstr* str);
 
 // Converts a view back into an owning tstr (allocates).
-TSTR_FUN_ATTRIBUTES tstr tstr_from_view(tstr_view v);
+TSTR_FUN_ATTRIBUTES tstr tstr_from_view(tstr_view view);
 
 // Returns a substring view.
-TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr_view tstr_sub(tstr_view v, size_t start, size_t len);
+TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr_view tstr_sub(tstr_view view, size_t start, size_t len);
 
 // Returns a substring view, from start until end
-TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr_view tstr_sub_until_end(tstr_view v, size_t start);
+TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr_view tstr_sub_until_end(tstr_view view, size_t start);
 
 // Returns the view, that starts after the first occurrence of needle, or NULL for data if not
 // found.
-TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr_view tstr_view_find(tstr_view v, const char* needle);
+TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr_view tstr_view_find(tstr_view view, const char* needle);
 
 // Checks if view equals a C-string.
-TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_view_eq(tstr_view v, const char* cstr);
+TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_view_eq(tstr_view view, const char* cstr);
 
 // Checks if view equals a C-string, ignoring case (ASCII only).
-TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_view_eq_ignore_case(tstr_view v, const char* cstr);
+TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_view_eq_ignore_case(tstr_view view, const char* cstr);
 
 // Checks if two views are equal.
-TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_view_eq_view(tstr_view a, tstr_view b);
+TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_view_eq_view(tstr_view vw1, tstr_view vw2);
 
 // Standard strcmp behavior for tstr_view objects.
-TSTR_FUN_ATTRIBUTES [[nodiscard]] int tstr_view_cmp(tstr_view a, tstr_view b);
+TSTR_FUN_ATTRIBUTES [[nodiscard]] int tstr_view_cmp(tstr_view vw1, tstr_view vw2);
 
 // Checks if view starts with prefix.
-TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_view_starts_with(tstr_view v, const char* prefix);
+TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_view_starts_with(tstr_view view, const char* prefix);
 
 // Checks if view ends with suffix.
-TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_view_ends_with(tstr_view v, const char* suffix);
+TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_view_ends_with(tstr_view view, const char* suffix);
 
 // Wrapper for checking if an owning tstr starts with prefix.
-TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_starts_with(const tstr* s, const char* prefix);
+TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_starts_with(const tstr* str, const char* prefix);
 
 // Wrapper for checking if an owning tstr ends with suffix.
-TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_ends_with(const tstr* s, const char* suffix);
+TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_ends_with(const tstr* str, const char* suffix);
 
 // Trims whitespace from the start of the view.
-TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr_view tstr_view_lstrip(tstr_view v);
+TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr_view tstr_view_lstrip(tstr_view view);
 
 // Trims whitespace from the end of the view.
-TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr_view tstr_view_rstrip(tstr_view v);
+TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr_view tstr_view_rstrip(tstr_view view);
 
 // Trims whitespace from both ends.
-TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr_view tstr_view_trim(tstr_view v);
+TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr_view tstr_view_trim(tstr_view view);
 
 // Converts a view to an integer (simple atoi replacement).
 // Returns true if successful, false if empty or invalid chars found.
-TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_view_to_int(tstr_view v, int* out);
+TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_view_to_int(tstr_view view, int* out);
 
 // Initializes an iterator for splitting a string.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr_split_iter tstr_split_init(tstr_view src, const char* delim);
 
 // Gets the next part in a split iteration. Returns false when done.
-TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_split_next(tstr_split_iter* it, tstr_view* out_part);
+TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_split_next(tstr_split_iter* iter, tstr_view* out_part);
 
 // Splits a tstr_view into two parts, return false if it couldn#t be split, the second part can also
 // be of length 0, if the delimiter is at the end of the src
