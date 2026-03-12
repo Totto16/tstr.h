@@ -306,7 +306,7 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_from(const char* cstr);
 			} \
 		}
 #else
-	#define TSTR_LIT_CONST(str) TSTR_LIT_COMPOUND(str)
+	#define TSTR_LIT_CONST(str) TSTR_LIT(str)
 #endif
 
 // Initializes a static string.
