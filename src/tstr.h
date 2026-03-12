@@ -40,21 +40,6 @@
 
 // Compiler extensions and optimization.
 
-// Type inference (typeof)
-#ifdef __cplusplus
-	#include <type_traits>
-	#define T_TYPEOF(x) typename std::remove_reference<decltype(x)>::type
-	#define T_HAS_TYPEOF 1
-#elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L
-	#define T_TYPEOF(x) typeof(x)
-	#define T_HAS_TYPEOF 1
-#elif defined(__GNUC__) || defined(__clang__) || defined(__TINYC__)
-	#define T_TYPEOF(x) __typeof__(x)
-	#define T_HAS_TYPEOF 1
-#else
-	#define T_HAS_TYPEOF 0
-#endif
-
 // Extensions (cleanup, attributes, branch prediction)
 #if !defined(T_NO_EXTENSIONS) && (defined(__GNUC__) || defined(__clang__) || defined(__TINYC__))
 
