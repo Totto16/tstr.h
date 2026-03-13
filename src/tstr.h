@@ -129,6 +129,7 @@ extern "C" {
 // OR 22 chars + null terminator. We stick to 23 bytes total storage.
 #define TSTR_SSO_CAP 23
 #define TSTR_UTF8_INVALID 0xFFFD
+#define TSTR_UTF8_INVALID_RUNES ((size_t)-1)
 
 #ifndef TSTR_FMT
 	#define TSTR_FMT "%.*s"
@@ -235,13 +236,16 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] size_t tstr_len(const tstr* str);
 // Returns true if the string length is 0.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_is_empty(const tstr* str);
 
-// Returns true if the underlying ptr is NULL, or the SSO string is empty
+// Returns true if the underlying ptr is NULL, it is always false for SSO strings
 TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_is_null(const tstr* str);
 
 /* Creation and Destruction */
 
 // Initializes an empty string {0}.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_init(void);
+
+// Initializes an string with ptr set to NULL
+TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_null(void);
 
 // Frees the string if it is on the heap, and resets it to empty.
 TSTR_FUN_ATTRIBUTES void tstr_free(tstr* str);
@@ -384,6 +388,7 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_contains(const tstr* str, const char
 TSTR_FUN_ATTRIBUTES [[nodiscard]] uint32_t tstr_next_rune(const char** ptr);
 
 // Counts the number of actual UTF-8 Runes, not bytes.
+// Returns TSTR_UTF8_INVALID_RUNES ((size_t)-1) on error.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] size_t tstr_count_runes(const tstr* str);
 
 // Validates that the string is strictly valid UTF-8.

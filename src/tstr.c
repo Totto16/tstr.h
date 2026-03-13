@@ -56,10 +56,10 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_is_empty(const tstr* str) {
 	return tstr_len(str) == 0;
 }
 
-// Returns true if the underlying ptr is NULL, or the SSO string is empty
+// Returns true if the underlying ptr is NULL, it is always false for SSO strings
 TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_is_null(const tstr* str) {
 	switch(str->type.inner) {
-		case tstr_type_enum_sso: return str->short_str.len == 0;
+		case tstr_type_enum_sso: return false;
 		case tstr_type_enum_long: return str->long_str.ptr == NULL;
 		case tstr_type_enum_static: return str->static_str.ptr == NULL;
 		default: {
@@ -74,6 +74,16 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_is_null(const tstr* str) {
 TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_init(void) {
 	tstr str;
 	memset(&str, 0, sizeof(tstr));
+	return str;
+}
+
+// Initializes an string with ptr set to NULL
+TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_null(void) {
+	tstr str = tstr_init();
+
+	str.type.inner = tstr_type_enum_long;
+	str.long_str = (tstr_long){ .ptr = NULL, .len = 0, .cap = 0 };
+
 	return str;
 }
 
@@ -168,12 +178,14 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] TStrResult tstr_reserve(tstr* const str, size_
 
 // Creates a new empty string with pre-allocated capacity on the heap.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_with_capacity(size_t cap) {
-	tstr s = tstr_init();
+	tstr str = tstr_init();
 	if(cap > TSTR_SSO_CAP) {
-		auto _ = tstr_reserve(&s, cap);
-		(void)_;
+		const TStrResult result = tstr_reserve(&str, cap);
+		if(result != TStrResultOk) {
+			return tstr_null();
+		}
 	}
-	return s;
+	return str;
 }
 
 // Reduces heap usage to fit the exact string length (or moves back to SSO if small enough).
@@ -213,7 +225,7 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_from_len(const char* ptr, size_t len
 	tstr s = tstr_init();
 	if(len >= TSTR_SSO_CAP) {
 		if(tstr_reserve(&s, len) != TStrResultOk) {
-			return s;
+			return tstr_null();
 		}
 		memcpy(s.long_str.ptr, ptr, len);
 		s.long_str.ptr[len] = '\0';
@@ -485,16 +497,25 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_join(const char** strings, size_t co
 	}
 
 	if(tstr_reserve(&str, total_len) != TStrResultOk) {
-		return str;
+		return tstr_null();
 	}
 
 	for(size_t i = 0; i < count; i++) {
-		auto _ = tstr_cat(&str, strings[i]);
-		(void)_;
+		const TStrResult result = tstr_cat(&str, strings[i]);
+
+		if(result != TStrResultOk) {
+			tstr_free(&str);
+			return tstr_null();
+		}
+
 		if(i < count - 1) {
 
-			auto _ = tstr_cat(&str, delim);
-			(void)_;
+			const TStrResult result2 = tstr_cat(&str, delim);
+
+			if(result2 != TStrResultOk) {
+				tstr_free(&str);
+				return tstr_null();
+			}
 		}
 	}
 	return str;
@@ -804,12 +825,15 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] uint32_t tstr_next_rune(const char** ptr) {
 }
 
 // Counts the number of actual UTF-8 Runes, not bytes.
+// Returns TSTR_UTF8_INVALID_RUNES ((size_t)-1) on error.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] size_t tstr_count_runes(const tstr* str) {
 	const char* ptr = tstr_cstr(str);
 	size_t count = 0;
 	while(*ptr) {
-		auto _ = tstr_next_rune(&ptr);
-		(void)_;
+		const uint32_t rune = tstr_next_rune(&ptr);
+		if(rune == TSTR_UTF8_INVALID) {
+			return TSTR_UTF8_INVALID_RUNES;
+		}
 		count++;
 	}
 	return count;
