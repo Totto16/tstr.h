@@ -90,7 +90,7 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_null(void) {
 // Frees the string if it is on the heap, and resets it to empty.
 TSTR_FUN_ATTRIBUTES void tstr_free(tstr* const str) {
 	if(str->type.inner == tstr_type_enum_long) T_STR_FREE(str->long_str.ptr);
-	*str = tstr_init();
+	*str = tstr_null();
 }
 
 // Clears the content (sets length to 0) but keeps the allocated capacity. static strings get nuked
