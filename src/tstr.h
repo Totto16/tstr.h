@@ -304,14 +304,21 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_from(const char* cstr);
 	#define TSTR_LIT_CONST(str) TSTR_LIT(str)
 #endif
 
-// Initializes a static string.
+// Initializes a static string as tstr.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_from_static_cstr(const char* str);
 
-// Initializes a static string.
-TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_from_static_str(tstr_static static_str);
-
-// Initializes a static string with length
+// Initializes a static string with length as tstr.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_from_static_cstr_with_len(const char* cstr, size_t len);
+
+// Initializes a static string as tstr_static.
+TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr_static tstr_static_from_static_cstr(const char* str);
+
+// Initializes a static string with length as tstr_static.
+TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr_static
+tstr_static_from_static_cstr_with_len(const char* cstr, size_t len);
+
+// Initializes a tstr form a static string.
+TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_from_static_tstr(tstr_static static_str);
 
 // Creates a deep copy of a tstr.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_dup(const tstr* str);

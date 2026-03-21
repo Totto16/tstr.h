@@ -244,25 +244,37 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_from(const char* cstr) {
 	return tstr_from_len(cstr, strlen(cstr));
 }
 
-// Initializes a static string.
+// Initializes a static string as tstr.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_from_static_cstr(const char* str) {
 	return tstr_from_static_cstr_with_len(str, strlen(str));
 }
 
-TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_from_static_str(const tstr_static static_str) {
-	tstr str = tstr_init();
-	str.type.inner = tstr_type_enum_static;
-	str.static_str = static_str;
-
-	return str;
-}
-
-// Initializes a static string with length
+// Initializes a static string with length as tstr.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_from_static_cstr_with_len(const char* cstr,
                                                                       size_t len) {
 	tstr str = tstr_init();
 	str.type.inner = tstr_type_enum_static;
 	str.static_str = (tstr_static){ .ptr = cstr, .len = len };
+
+	return str;
+}
+
+// Initializes a static string as tstr_static.
+TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr_static tstr_static_from_static_cstr(const char* str) {
+	return tstr_static_from_static_cstr_with_len(str, strlen(str));
+}
+
+// Initializes a static string with length as tstr_static.
+TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr_static
+tstr_static_from_static_cstr_with_len(const char* cstr, size_t len) {
+	return (tstr_static){ .ptr = cstr, .len = len };
+}
+
+// Initializes a tstr form a static string.
+TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_from_static_tstr(const tstr_static static_str) {
+	tstr str = tstr_init();
+	str.type.inner = tstr_type_enum_static;
+	str.static_str = static_str;
 
 	return str;
 }
