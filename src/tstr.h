@@ -134,6 +134,7 @@ extern "C" {
 #ifndef TSTR_FMT
 	#define TSTR_FMT "%.*s"
 	#define TSTR_FMT_ARGS(str) ((int)tstr_len(&(str))), (tstr_cstr(&(str)))
+	#define TSTR_STATIC_FMT_ARGS(str) ((int)((str).len)), ((str).ptr)
 	#define TSV_FMT_ARGS(str_vw) ((int)(str_vw).len), ((str_vw).data)
 #endif
 
