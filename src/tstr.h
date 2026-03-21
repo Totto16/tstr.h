@@ -306,8 +306,11 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_from(const char* cstr);
 // Initializes a static string.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_from_static_cstr(const char* str);
 
+// Initializes a static string.
+TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_from_static_str(tstr_static static_str);
+
 // Initializes a static string with length
-TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_from_static_cstr_with_len(const char* str, size_t len);
+TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_from_static_cstr_with_len(const char* cstr, size_t len);
 
 // Creates a deep copy of a tstr.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_dup(const tstr* str);
