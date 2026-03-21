@@ -240,13 +240,19 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_is_empty(const tstr* str);
 // Returns true if the underlying ptr is NULL, it is always false for SSO strings
 TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_is_null(const tstr* str);
 
+// Returns true if the underlying ptr is NULL
+TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_static_is_null(tstr_static str);
+
 /* Creation and Destruction */
 
 // Initializes an empty string {0}.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_init(void);
 
-// Initializes an string with ptr set to NULL
+// Initializes a string with ptr set to NULL
 TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_null(void);
+
+// Initializes a static string with ptr set to NULL
+TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr_static tstr_static_null(void);
 
 // Frees the string if it is on the heap, and resets it to empty.
 TSTR_FUN_ATTRIBUTES void tstr_free(tstr* str);

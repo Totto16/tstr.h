@@ -68,6 +68,11 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_is_null(const tstr* str) {
 	}
 }
 
+// Returns true if the underlying ptr is NULL
+TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_static_is_null(tstr_static str) {
+	return str.ptr == NULL;
+}
+
 /* Creation and Destruction */
 
 // Initializes an empty string {0}.
@@ -85,6 +90,11 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_null(void) {
 	str.long_str = (tstr_long){ .ptr = NULL, .len = 0, .cap = 0 };
 
 	return str;
+}
+
+// Initializes a static string with ptr set to NULL
+TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr_static tstr_static_null(void) {
+	return (tstr_static){ .ptr = NULL, .len = 0 };
 }
 
 // Frees the string if it is on the heap, and resets it to empty.
