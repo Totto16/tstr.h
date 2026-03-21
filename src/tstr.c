@@ -735,7 +735,7 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_eq(const tstr* str1, const tstr* str
 	return memcmp(tstr_cstr(str1), tstr_cstr(str2), la) == 0;
 }
 
-// Checks equality between two tstr objects (faster than strcmp).
+// Checks equality between a tstr and a cstr.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_eq_cstr(const tstr* const str1,
                                                     const char* const str2) {
 	size_t la = tstr_len(str1);
@@ -785,6 +785,25 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_eq_ignore_case_cstr(const tstr* cons
 // Standard strcmp behavior for tstr objects.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] int tstr_cmp(const tstr* str1, const tstr* str2) {
 	return strcmp(tstr_cstr(str1), tstr_cstr(str2));
+}
+
+// Checks equality between two tstr_static objects (faster than strcmp).
+TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_static_eq(const tstr_static str1,
+                                                      const tstr_static str2) {
+	if(str1.len != str2.len) {
+		return false;
+	}
+	return memcmp(str1.ptr, str2.ptr, str1.len) == 0;
+}
+
+// Checks equality between a tstr_static and a cstr.
+TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_static_eq_cstr(const tstr_static str1,
+                                                           const char* const str2) {
+	const size_t lb = strlen(str2);
+	if(str1.len != lb) {
+		return false;
+	}
+	return memcmp(str1.ptr, str2, lb) == 0;
 }
 
 /* Search */
