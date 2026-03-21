@@ -282,11 +282,15 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_from(const char* cstr);
 #define TSTR_SIZE_OF_STR_LIT(str) ((sizeof(str) - 1) + (REQUIRE_STRING_LITERAL(str)))
 
 // Macro for compile-time string literals (avoids runtime strlen).
+#define TSTR_STATIC_LIT(str) ((tstr_static){ .ptr = (str), .len = TSTR_SIZE_OF_STR_LIT(str) })
+
 #define TSTR_LIT(str) \
 	((tstr){ .type = { .inner = tstr_type_enum_static }, \
 	         .static_str = (tstr_static){ .ptr = (str), .len = TSTR_SIZE_OF_STR_LIT(str) } })
 
 #if defined(__GNUC__) && (!(defined(__clang__)))
+	#define TSTR_STATIC_LIT_CONST(str) { .ptr = (str), .len = TSTR_SIZE_OF_STR_LIT(str) }
+
 	#define TSTR_LIT_CONST(str) \
 		{ \
 			.type = { .inner = tstr_type_enum_static }, .static_str = { \
@@ -295,6 +299,7 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_from(const char* cstr);
 			} \
 		}
 #else
+	#define TSTR_STATIC_LIT_CONST(str) TSTR_STATIC_LIT(str)
 	#define TSTR_LIT_CONST(str) TSTR_LIT(str)
 #endif
 
