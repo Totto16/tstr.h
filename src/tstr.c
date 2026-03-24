@@ -949,6 +949,11 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr_view tstr_as_view(const tstr* str) {
 	return (tstr_view){ .data = tstr_cstr(str), .len = tstr_len(str) };
 }
 
+// Creates a view covering the entire tstr_static.
+TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr_view tstr_static_as_view(tstr_static str) {
+	return (tstr_view){ .data = str.ptr, .len = str.len };
+}
+
 // Converts a view back into an owning tstr (allocates).
 TSTR_FUN_ATTRIBUTES tstr tstr_from_view(tstr_view view) {
 	return tstr_from_len(view.data, view.len);

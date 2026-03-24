@@ -436,6 +436,9 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr_view tstr_view_from(const char* cstr);
 // Creates a view covering the entire tstr.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr_view tstr_as_view(const tstr* str);
 
+// Creates a view covering the entire tstr_static.
+TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr_view tstr_static_as_view(tstr_static str);
+
 // Converts a view back into an owning tstr (allocates).
 TSTR_FUN_ATTRIBUTES tstr tstr_from_view(tstr_view view);
 
