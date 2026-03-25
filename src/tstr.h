@@ -392,6 +392,10 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_eq_ignore_case(const tstr* str1, con
 // Checks equality ignoring case (ASCII only).
 TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_eq_ignore_case_cstr(const tstr* str1, const char* str2);
 
+// Checks equality ignoring case (ASCII only).
+TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_eq_ignore_case_static_tstr(const tstr* str1,
+                                                                       tstr_static str2);
+
 // Standard strcmp behavior for tstr objects.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] int tstr_cmp(const tstr* str1, const tstr* str2);
 

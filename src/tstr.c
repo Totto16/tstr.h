@@ -792,6 +792,25 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_eq_ignore_case_cstr(const tstr* cons
 	return true;
 }
 
+// Checks equality ignoring case (ASCII only).
+TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_eq_ignore_case_static_tstr(const tstr* const str1,
+                                                                       const tstr_static str2) {
+	size_t len = tstr_len(str1);
+	if(len != str2.len) {
+		return false;
+	}
+
+	const char* ptr1 = tstr_cstr(str1);
+	const char* ptr2 = str2.ptr;
+
+	for(size_t i = 0; i < len; i++) {
+		if(tolower((unsigned char)ptr1[i]) != tolower((unsigned char)ptr2[i])) {
+			return false;
+		}
+	}
+	return true;
+}
+
 // Standard strcmp behavior for tstr objects.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] int tstr_cmp(const tstr* str1, const tstr* str2) {
 	return strcmp(tstr_cstr(str1), tstr_cstr(str2));
