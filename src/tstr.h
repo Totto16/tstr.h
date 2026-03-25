@@ -386,6 +386,9 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_eq(const tstr* str1, const tstr* str
 // Checks equality between a tstr and a cstr.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_eq_cstr(const tstr* str1, const char* str2);
 
+// Checks equality between a tstr and a tstr_static.
+TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_eq_static_tstr(const tstr* str1, tstr_static str2);
+
 // Checks equality ignoring case (ASCII only).
 TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_eq_ignore_case(const tstr* str1, const tstr* str2);
 

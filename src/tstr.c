@@ -736,7 +736,7 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] TStrResult tstr_replace(tstr* str, const char*
 /* Comparison */
 
 // Checks equality between two tstr objects (faster than strcmp).
-TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_eq(const tstr* str1, const tstr* str2) {
+TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_eq(const tstr* const str1, const tstr* const str2) {
 	size_t la = tstr_len(str1);
 	size_t lb = tstr_len(str2);
 	if(la != lb) {
@@ -754,6 +754,18 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_eq_cstr(const tstr* const str1,
 		return false;
 	}
 	return memcmp(tstr_cstr(str1), str2, la) == 0;
+}
+
+// Checks equality between a tstr and a tstr_static.
+TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_eq_static_tstr(const tstr* const str1,
+                                                           const tstr_static str2) {
+	size_t la = tstr_len(str1);
+	size_t lb = str2.len;
+
+	if(la != lb) {
+		return false;
+	}
+	return memcmp(tstr_cstr(str1), str2.ptr, la) == 0;
 }
 
 // Checks equality ignoring case (ASCII only).
