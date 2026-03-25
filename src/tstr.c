@@ -1037,8 +1037,24 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_view_eq(tstr_view view, const char* 
 	return memcmp(view.data, cstr, view.len) == 0;
 }
 
+// Checks if two views are equal, ignoring case (ASCII only).
+TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_view_eq_ignore_case(const tstr_view view1,
+                                                                const tstr_view view2) {
+	if(view1.len != view2.len) {
+		return false;
+	}
+
+	for(size_t i = 0; i < view1.len; i++) {
+		if(tolower((unsigned char)view1.data[i]) != tolower((unsigned char)view2.data[i])) {
+			return false;
+		}
+	}
+	return true;
+}
+
 // Checks if view equals a C-string, ignoring case (ASCII only).
-TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_view_eq_ignore_case(tstr_view view, const char* cstr) {
+TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_view_eq_ignore_case_cstr(const tstr_view view,
+                                                                     const char* const cstr) {
 	if(strlen(cstr) != view.len) {
 		return false;
 	}
