@@ -281,33 +281,60 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_from_len(const char* ptr, size_t len
 // Creates a tstr from a standard C-string.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_from(const char* cstr);
 
-#define REQUIRE_STRING_LITERAL(str) \
-	(0 * \
-	 sizeof( \
-	     char[1][__builtin_types_compatible_p(__typeof__(str), __typeof__(&(str)[0])) ? -1 : 1]))
+#ifdef __cplusplus
 
-#define TSTR_SIZE_OF_STR_LIT(str) ((sizeof(str) - 1) + (REQUIRE_STRING_LITERAL(str)))
+TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_from_static_cstr_with_len(const char* cstr, size_t len);
 
-// Macro for compile-time string literals (avoids runtime strlen).
-#define TSTR_STATIC_LIT(str) ((tstr_static){ .ptr = (str), .len = TSTR_SIZE_OF_STR_LIT(str) })
+TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr_static
+tstr_static_from_static_cstr_with_len(const char* cstr, size_t len);
 
-#define TSTR_LIT(str) \
-	((tstr){ .type = { .inner = tstr_type_enum_static }, \
-	         .static_str = (tstr_static){ .ptr = (str), .len = TSTR_SIZE_OF_STR_LIT(str) } })
+[[nodiscard]] static constexpr tstr operator""_tstr(const char* str, std::size_t len) {
+	return tstr_from_static_cstr_with_len(str, len);
+}
 
-#if defined(__GNUC__) && (!(defined(__clang__)))
-	#define TSTR_STATIC_LIT_CONST(str) { .ptr = (str), .len = TSTR_SIZE_OF_STR_LIT(str) }
+[[nodiscard]] static constexpr tstr_static operator""_tstr_static(const char* str,
+                                                                  std::size_t len) {
+	return tstr_static_from_static_cstr_with_len(str, len);
+}
 
-	#define TSTR_LIT_CONST(str) \
-		{ \
-			.type = { .inner = tstr_type_enum_static }, .static_str = { \
-				.ptr = (str), \
-				.len = TSTR_SIZE_OF_STR_LIT(str) \
-			} \
-		}
-#else
+	#define TSTR_STATIC_LIT(str) str##_tstr_static
 	#define TSTR_STATIC_LIT_CONST(str) TSTR_STATIC_LIT(str)
+
+	#define TSTR_LIT(str) str##_tstr
 	#define TSTR_LIT_CONST(str) TSTR_LIT(str)
+
+#else
+
+	#define REQUIRE_STRING_LITERAL(str) \
+		(0 * \
+		 sizeof( \
+		     char[1] \
+		         [__builtin_types_compatible_p(__typeof__(str), __typeof__(&(str)[0])) ? -1 : 1]))
+
+	#define TSTR_SIZE_OF_STR_LIT(str) ((sizeof(str) - 1) + (REQUIRE_STRING_LITERAL(str)))
+
+    // Macro for compile-time string literals (avoids runtime strlen).
+	#define TSTR_STATIC_LIT(str) ((tstr_static){ .ptr = (str), .len = TSTR_SIZE_OF_STR_LIT(str) })
+
+	#define TSTR_LIT(str) \
+		((tstr){ .type = { .inner = tstr_type_enum_static }, \
+		         .static_str = (tstr_static){ .ptr = (str), .len = TSTR_SIZE_OF_STR_LIT(str) } })
+
+	#if defined(__GNUC__) && (!(defined(__clang__)))
+		#define TSTR_STATIC_LIT_CONST(str) { .ptr = (str), .len = TSTR_SIZE_OF_STR_LIT(str) }
+
+		#define TSTR_LIT_CONST(str) \
+			{ \
+				.type = { .inner = tstr_type_enum_static }, .static_str = { \
+					.ptr = (str), \
+					.len = TSTR_SIZE_OF_STR_LIT(str) \
+				} \
+			}
+	#else
+		#define TSTR_STATIC_LIT_CONST(str) TSTR_STATIC_LIT(str)
+		#define TSTR_LIT_CONST(str) TSTR_LIT(str)
+	#endif
+
 #endif
 
 // Initializes a static string as tstr.
