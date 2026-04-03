@@ -283,19 +283,26 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_from(const char* cstr);
 
 #ifdef __cplusplus
 
-TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_from_static_cstr_with_len(const char* cstr, size_t len);
+// close extern "C"
+}
 
-TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr_static
-tstr_static_from_static_cstr_with_len(const char* cstr, size_t len);
 
 [[nodiscard]] static constexpr tstr operator""_tstr(const char* str, std::size_t len) {
-	return tstr_from_static_cstr_with_len(str, len);
+	tstr result = {};
+	result.type.inner = tstr_type_enum_static;
+	result.static_str = { .ptr = str, .len = len };
+
+	return result;
 }
 
 [[nodiscard]] static constexpr tstr_static operator""_tstr_static(const char* str,
                                                                   std::size_t len) {
-	return tstr_static_from_static_cstr_with_len(str, len);
+	const tstr_static result = { .ptr = str, .len = len };
+	return result;
 }
+
+// new extern "C"
+extern "C" {
 
 	#define TSTR_STATIC_LIT(str) str##_tstr_static
 	#define TSTR_STATIC_LIT_CONST(str) TSTR_STATIC_LIT(str)
