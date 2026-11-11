@@ -124,10 +124,14 @@ extern "C" {
 	#define TSTR_PRINTF_ATTR(fmt_idx, var_idx)
 #endif
 
+#ifndef TSTR_DONT_USE_SHORT_STRINGS 
+
 // SSO Capacity -> 23 bytes available.
 // Max string length = 23 chars (if using the last byte for length/flag trick)
 // OR 22 chars + null terminator. We stick to 23 bytes total storage.
 #define TSTR_SSO_CAP 23
+#endif
+
 #define TSTR_UTF8_INVALID 0xFFFD
 #define TSTR_UTF8_INVALID_RUNES ((size_t)-1)
 
@@ -150,11 +154,15 @@ typedef struct {
 	size_t cap;
 } tstr_long;
 
+#ifndef TSTR_DONT_USE_SHORT_STRINGS
+
 // Stack allocated (SSO) layout.
 typedef struct {
 	char buf[TSTR_SSO_CAP];
 	uint8_t len;
 } tstr_short;
+
+#endif
 
 // static (readonly string)
 typedef struct {
@@ -163,7 +171,9 @@ typedef struct {
 } tstr_static;
 
 typedef enum : uint8_t {
+#ifndef TSTR_DONT_USE_SHORT_STRINGS
 	tstr_type_enum_sso = 0,
+#endif
 	tstr_type_enum_long = 1,
 	tstr_type_enum_static = 2,
 } tstr_type_enum;
@@ -181,7 +191,9 @@ typedef struct {
 	tstr_type type;
 	union {
 		tstr_long long_str;
+#ifndef TSTR_DONT_USE_SHORT_STRINGS
 		tstr_short short_str;
+#endif
 		tstr_static static_str;
 	};
 } tstr;
@@ -219,8 +231,12 @@ typedef enum : bool {
 // Returns true if the string is heap-allocated.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_is_long(const tstr* str);
 
+#ifndef TSTR_DONT_USE_SHORT_STRINGS
+
 // Returns true if the string is SSO, allocated on the stack
 TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_is_sso(const tstr* str);
+
+#endif
 
 // Returns true if the string is a static string, alias not modifiable
 TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_is_static(const tstr* str);

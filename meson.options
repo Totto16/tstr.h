@@ -5,3 +5,10 @@ option(
     choices: ['allocate', 'error'],
     description: 'specify the behavior to use if you try to modify static strings:\n allocate: allocate a heap string and migrate the old one, error: error out',
 )
+
+option(
+    'use_short_strings',
+    type: 'boolean',
+    value: true,
+    description: 'allow the usage of short strings',
+)

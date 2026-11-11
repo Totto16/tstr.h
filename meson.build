@@ -22,15 +22,28 @@ subdir('src')
 
 c_args = []
 
-static_string_modification_behavior = get_option('static_string_modification_behavior')
+static_string_modification_behavior = get_option(
+    'static_string_modification_behavior',
+)
 
 if static_string_modification_behavior == 'allocate'
-   c_args += '-DTSTR_STATIC_STRING_MODIFICATION_BEHAVIOR=0'
+    c_args += '-DTSTR_STATIC_STRING_MODIFICATION_BEHAVIOR=0'
 elif static_string_modification_behavior == 'error'
     c_args += '-DTSTR_STATIC_STRING_MODIFICATION_BEHAVIOR=1'
 else
-    error('invalid value for option: \'static_string_modification_behavior\': ' + static_string_modification_behavior)
+    error(
+        'invalid value for option: \'static_string_modification_behavior\': ' + static_string_modification_behavior,
+    )
 endif
+
+use_short_strings = get_option('use_short_strings')
+
+compile_args = []
+
+if not use_short_strings
+    compile_args += '-DTSTR_DONT_USE_SHORT_STRINGS'
+endif
+
 
 tstr_lib = library(
     'tstr',
@@ -38,13 +51,14 @@ tstr_lib = library(
     include_directories: inc_dirs,
     install: true,
     version: meson.project_version(),
-    c_args: c_args
+    c_args: [c_args, compile_args],
 )
 
 tstr_dep = declare_dependency(
-     link_with: tstr_lib,
+    link_with: tstr_lib,
     include_directories: inc_dirs,
     version: meson.project_version(),
+    compile_args: compile_args,
 )
 
 meson.override_dependency('tstr.h', tstr_dep)

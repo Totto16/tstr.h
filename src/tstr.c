@@ -5,10 +5,14 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_is_long(const tstr* str) {
 	return str->type.inner == tstr_type_enum_long;
 }
 
+#ifndef TSTR_DONT_USE_SHORT_STRINGS
+
 // Returns true if the string is SSO, allocated on the stack
 TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_is_sso(const tstr* str) {
 	return str->type.inner == tstr_type_enum_sso;
 }
+
+#endif
 
 // Returns true if the string is a static string, alias not modifiable
 TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_is_static(const tstr* str) {
@@ -18,7 +22,9 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_is_static(const tstr* str) {
 // Returns a pointer to the mutable data buffer.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] char* tstr_data(tstr* str) {
 	switch(str->type.inner) {
+#ifndef TSTR_DONT_USE_SHORT_STRINGS
 		case tstr_type_enum_sso: return str->short_str.buf;
+#endif
 		case tstr_type_enum_long: return str->long_str.ptr;
 		case tstr_type_enum_static: return NULL;
 		default: {
@@ -30,7 +36,9 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] char* tstr_data(tstr* str) {
 // Returns a pointer to the const data buffer (C-string compatible).
 TSTR_FUN_ATTRIBUTES [[nodiscard]] const char* tstr_cstr(const tstr* str) {
 	switch(str->type.inner) {
+#ifndef TSTR_DONT_USE_SHORT_STRINGS
 		case tstr_type_enum_sso: return str->short_str.buf;
+#endif
 		case tstr_type_enum_long: return str->long_str.ptr;
 		case tstr_type_enum_static: return str->static_str.ptr;
 		default: {
@@ -42,7 +50,9 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] const char* tstr_cstr(const tstr* str) {
 // Returns the current length of the string (excluding null terminator).
 TSTR_FUN_ATTRIBUTES [[nodiscard]] size_t tstr_len(const tstr* str) {
 	switch(str->type.inner) {
+#ifndef TSTR_DONT_USE_SHORT_STRINGS
 		case tstr_type_enum_sso: return str->short_str.len;
+#endif
 		case tstr_type_enum_long: return str->long_str.len;
 		case tstr_type_enum_static: return str->static_str.len;
 		default: {
@@ -59,7 +69,9 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_is_empty(const tstr* str) {
 // Returns true if the underlying ptr is NULL, it is always false for SSO strings
 TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_is_null(const tstr* str) {
 	switch(str->type.inner) {
+#ifndef TSTR_DONT_USE_SHORT_STRINGS
 		case tstr_type_enum_sso: return false;
+#endif
 		case tstr_type_enum_long: return str->long_str.ptr == NULL;
 		case tstr_type_enum_static: return str->static_str.ptr == NULL;
 		default: {
@@ -107,20 +119,28 @@ TSTR_FUN_ATTRIBUTES void tstr_free(tstr* const str) {
 // in favor of a SSO string
 TSTR_FUN_ATTRIBUTES void tstr_clear(tstr* const str) {
 	switch(str->type.inner) {
+#ifndef TSTR_DONT_USE_SHORT_STRINGS
 		case tstr_type_enum_sso: {
 			str->short_str.len = 0;
 			str->short_str.buf[0] = '\0';
 			break;
 		}
+#endif
 		case tstr_type_enum_long: {
 			str->long_str.len = 0;
 			str->long_str.ptr[0] = '\0';
 			break;
 		}
 		case tstr_type_enum_static: {
+#ifndef TSTR_DONT_USE_SHORT_STRINGS
 			str->type.inner = tstr_type_enum_sso;
 			str->short_str.len = 0;
 			str->short_str.buf[0] = '\0';
+#else
+			str->type.inner = tstr_type_enum_static;
+			str->static_str.len = 0;
+			str->static_str.ptr = "";
+#endif
 			break;
 		}
 		default: {
@@ -151,9 +171,11 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] TStrResult tstr_reserve(tstr* const str, size_
 		tstr_attempt_static_string_modification(str);
 	}
 
+#ifndef TSTR_DONT_USE_SHORT_STRINGS
 	if(new_cap < TSTR_SSO_CAP) {
 		return TStrResultOk;
 	}
+#endif
 
 	if(str->type.inner == tstr_type_enum_long && new_cap <= str->long_str.cap) {
 		return TStrResultOk;
@@ -163,11 +185,16 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] TStrResult tstr_reserve(tstr* const str, size_
 	if(str->type.inner == tstr_type_enum_long) {
 		new_ptr = T_STR_REALLOC(str->long_str.ptr, new_cap + 1);
 	} else {
+#ifndef TSTR_DONT_USE_SHORT_STRINGS
 		new_ptr = T_STR_MALLOC(new_cap + 1);
 		if(new_ptr) {
 			memcpy(new_ptr, str->short_str.buf, str->short_str.len);
 			new_ptr[str->short_str.len] = '\0';
 		}
+#else
+		// unreachable it has to be long!
+		return TStrResultErr;
+#endif
 	}
 
 	if(!new_ptr) {
@@ -176,8 +203,13 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] TStrResult tstr_reserve(tstr* const str, size_
 
 	// Transition state if we were short before.
 	if(str->type.inner != tstr_type_enum_long) {
+#ifndef TSTR_DONT_USE_SHORT_STRINGS
 		str->long_str.len = str->short_str.len;
 		str->type.inner = tstr_type_enum_long;
+#else
+		// unreachable it has to be long!
+		return TStrResultErr;
+#endif
 	}
 
 	str->long_str.ptr = new_ptr;
@@ -189,7 +221,11 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] TStrResult tstr_reserve(tstr* const str, size_
 // Creates a new empty string with pre-allocated capacity on the heap.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_with_capacity(size_t cap) {
 	tstr str = tstr_init();
+#ifndef TSTR_DONT_USE_SHORT_STRINGS
 	if(cap > TSTR_SSO_CAP) {
+#else
+	if(true) {
+#endif
 		const TStrResult result = tstr_reserve(&str, cap);
 		if(result != TStrResultOk) {
 			return tstr_null();
@@ -204,6 +240,7 @@ TSTR_FUN_ATTRIBUTES void tstr_shrink_to_fit(tstr* const str) {
 		return;
 	}
 
+#ifndef TSTR_DONT_USE_SHORT_STRINGS
 	// Downgrade to SSO if possible.
 	if(str->long_str.len <= TSTR_SSO_CAP) {
 		char temp[TSTR_SSO_CAP];
@@ -218,6 +255,7 @@ TSTR_FUN_ATTRIBUTES void tstr_shrink_to_fit(tstr* const str) {
 		str->short_str.len = old_len;
 		return;
 	}
+#endif
 
 	if(str->long_str.len < str->long_str.cap) {
 		char* new_ptr = T_STR_REALLOC(str->long_str.ptr, str->long_str.len + 1);
@@ -233,19 +271,26 @@ TSTR_FUN_ATTRIBUTES void tstr_shrink_to_fit(tstr* const str) {
 // Helper: Creates tstr from ptr + explicit len.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_from_len(const char* ptr, size_t len) {
 	tstr s = tstr_init();
+#ifndef TSTR_DONT_USE_SHORT_STRINGS
 	if(len >= TSTR_SSO_CAP) {
+#else
+	if(true) {
+#endif
 		if(tstr_reserve(&s, len) != TStrResultOk) {
 			return tstr_null();
 		}
 		memcpy(s.long_str.ptr, ptr, len);
 		s.long_str.ptr[len] = '\0';
 		s.long_str.len = len;
-	} else {
+	} 
+#ifndef TSTR_DONT_USE_SHORT_STRINGS
+	else {
 		memcpy(s.short_str.buf, ptr, len);
 		s.short_str.buf[len] = '\0';
 		s.short_str.len = (uint8_t)len;
 		s.type.inner = tstr_type_enum_sso;
 	}
+#endif
 	return s;
 }
 
@@ -312,12 +357,16 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_dup(const tstr* str) {
 TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_own(char* ptr, size_t len, size_t cap) {
 	tstr s = tstr_init();
 
+#ifndef TSTR_DONT_USE_SHORT_STRINGS
 	if(cap <= TSTR_SSO_CAP) {
 		memcpy(s.short_str.buf, ptr, len);
 		s.short_str.buf[len] = '\0';
 		s.short_str.len = (uint8_t)len;
 		s.type.inner = tstr_type_enum_sso;
 		T_STR_FREE(ptr);
+#else
+	if(false){
+#endif
 	} else {
 		s.type.inner = tstr_type_enum_long;
 		s.long_str.ptr = ptr;
@@ -340,6 +389,7 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] char* tstr_take(tstr* str) {
 	char* ptr;
 
 	switch(str->type.inner) {
+#ifndef TSTR_DONT_USE_SHORT_STRINGS
 		case tstr_type_enum_sso: {
 			ptr = T_STR_MALLOC(str->short_str.len + 1);
 			if(ptr) {
@@ -348,6 +398,7 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] char* tstr_take(tstr* str) {
 			}
 			break;
 		}
+#endif
 		case tstr_type_enum_long: {
 			ptr = str->long_str.ptr;
 			break;
@@ -398,7 +449,12 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_read_file(const char* path) {
 	if(str.type.inner == tstr_type_enum_long) {
 		str.long_str.len = read_count;
 	} else {
+#ifndef TSTR_DONT_USE_SHORT_STRINGS
 		str.short_str.len = (uint8_t)read_count;
+#else
+		// unreachable it has to be long!
+		return tstr_null();
+#endif
 	}
 
 	fclose(file);
@@ -407,7 +463,9 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_read_file(const char* path) {
 
 [[nodiscard]] static inline size_t tstr_get_cap(const tstr* const str) {
 	switch(str->type.inner) {
+#ifndef TSTR_DONT_USE_SHORT_STRINGS
 		case tstr_type_enum_sso: return TSTR_SSO_CAP;
+#endif
 		case tstr_type_enum_long: return str->long_str.cap;
 		case tstr_type_enum_static: return str->static_str.len;
 		default: {
@@ -439,7 +497,12 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] TStrResult tstr_push_char(tstr* const str, cha
 	if(str->type.inner == tstr_type_enum_long) {
 		str->long_str.len++;
 	} else {
+#ifndef TSTR_DONT_USE_SHORT_STRINGS
 		str->short_str.len++;
+#else
+		// unreachable it has to be long!
+		return TStrResultErr;
+#endif
 	}
 
 	return TStrResultOk;
@@ -464,7 +527,13 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] char tstr_pop_char(tstr* str) {
 	if(str->type.inner == tstr_type_enum_long) {
 		str->long_str.len--;
 	} else {
+
+#ifndef TSTR_DONT_USE_SHORT_STRINGS
 		str->short_str.len--;
+#else
+		// unreachable it has to be long!
+		return TStrResultErr;
+#endif
 	}
 
 	return c;
@@ -484,11 +553,18 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] TStrResult tstr_cat_len(tstr* const str, const
 
 	if(req_cap >= cap) {
 		size_t new_cap = cap;
+#ifndef TSTR_DONT_USE_SHORT_STRINGS
+
 		// Logic fixed: starting cap is 23. If we grow, we just multiply.
 		// We do not fallback to 32 because 23 > 0.
 		if(new_cap == 0) {
 			new_cap = TSTR_SSO_CAP;
 		}
+#else
+		if(new_cap == 0) {
+			new_cap = T_GROWTH_FACTOR(new_cap);
+		}
+#endif
 
 		while(new_cap <= req_cap) {
 			new_cap = T_GROWTH_FACTOR(new_cap);
@@ -506,7 +582,12 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] TStrResult tstr_cat_len(tstr* const str, const
 	if(str->type.inner == tstr_type_enum_long) {
 		str->long_str.len += src_len;
 	} else {
+#ifndef TSTR_DONT_USE_SHORT_STRINGS
 		str->short_str.len += (uint8_t)src_len;
+#else
+		// unreachable it has to be long!
+		return TStrResultErr;
+#endif
 	}
 
 	return TStrResultOk;
@@ -593,7 +674,12 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_join(const char** strings, size_t co
 	if(str->type.inner == tstr_type_enum_long) {
 		str->long_str.len += len;
 	} else {
+#ifndef TSTR_DONT_USE_SHORT_STRINGS
 		str->short_str.len += (uint8_t)len;
+#else
+		// unreachable it has to be long!
+		return TStrResultErr;
+#endif
 	}
 
 	return TStrResultOk;
@@ -663,7 +749,12 @@ TSTR_FUN_ATTRIBUTES void tstr_trim(tstr* const str) {
 	if(str->type.inner == tstr_type_enum_long) {
 		str->long_str.len = final_len;
 	} else {
+#ifndef TSTR_DONT_USE_SHORT_STRINGS
 		str->short_str.len = (uint8_t)final_len;
+#else
+		// unreachable it has to be long!
+		return;
+#endif
 	}
 }
 
@@ -724,7 +815,12 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] TStrResult tstr_replace(tstr* str, const char*
 	if(res.type.inner == tstr_type_enum_long) {
 		res.long_str.len = new_len;
 	} else {
+#ifndef TSTR_DONT_USE_SHORT_STRINGS
 		res.short_str.len = (uint8_t)new_len;
+#else
+		// unreachable it has to be long!
+		return TStrResultErr;
+#endif
 	}
 
 	tstr_free(str);
