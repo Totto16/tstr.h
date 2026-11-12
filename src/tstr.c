@@ -1,6 +1,19 @@
 #include "./tstr.h"
 
 
+#if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L)
+    #define TSTR_UNREACHABLE() unreachable()
+#else
+	#if defined(__GNUC__) || defined(__clang__)
+		#define TSTR_UNREACHABLE() __builtin_unreachable()
+	#elif defined(_MSC_VER)
+		#define TSTR_UNREACHABLE() __assume(0)
+	#else
+		#include <stdlib.h>
+		#define TSTR_UNREACHABLE() abort()
+	#endif
+#endif
+
 // Returns true if the string is heap-allocated.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_is_long(const tstr* str) {
 	return str->type.inner == tstr_type_enum_long;
@@ -24,7 +37,7 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_holds_memory(const tstr* str){
 		case tstr_type_enum_long: return str->long_str.ptr != NULL;
 		case tstr_type_enum_static: return false;
 		default: {
-			unreachable();
+			TSTR_UNREACHABLE();
 			return false;
 		}
 	}
@@ -44,7 +57,7 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] char* tstr_data(tstr* str) {
 		case tstr_type_enum_long: return str->long_str.ptr;
 		case tstr_type_enum_static: return NULL;
 		default: {
-			unreachable();
+			TSTR_UNREACHABLE();
 			return NULL;
 		}
 	}
@@ -59,7 +72,7 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] const char* tstr_cstr(const tstr* str) {
 		case tstr_type_enum_long: return str->long_str.ptr;
 		case tstr_type_enum_static: return str->static_str.ptr;
 		default: {
-			unreachable();
+			TSTR_UNREACHABLE();
 			return NULL;
 		}
 	}
@@ -74,7 +87,7 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] size_t tstr_len(const tstr* str) {
 		case tstr_type_enum_long: return str->long_str.len;
 		case tstr_type_enum_static: return str->static_str.len;
 		default: {
-			unreachable();
+			TSTR_UNREACHABLE();
 			return 0;
 		}
 	}
@@ -94,7 +107,7 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_is_null(const tstr* str) {
 		case tstr_type_enum_long: return str->long_str.ptr == NULL;
 		case tstr_type_enum_static: return str->static_str.ptr == NULL;
 		default: {
-			unreachable();
+			TSTR_UNREACHABLE();
 			return true;
 		}
 	}
@@ -190,7 +203,7 @@ TSTR_FUN_ATTRIBUTES void tstr_clear(tstr* const str) {
 			break;
 		}
 		default: {
-			unreachable();
+			TSTR_UNREACHABLE();
 		}
 	}
 }
@@ -509,6 +522,7 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] char* tstr_take(tstr* str) {
 			break;
 		}
 		default: {
+			TSTR_UNREACHABLE();
 			ptr = NULL;
 			break;
 		}
@@ -574,7 +588,7 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_read_file(const char* path) {
 		case tstr_type_enum_long: return str->long_str.cap;
 		case tstr_type_enum_static: return str->static_str.len;
 		default: {
-			unreachable();
+			TSTR_UNREACHABLE();
 			return 0;
 		}
 	}
