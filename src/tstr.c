@@ -1,18 +1,15 @@
 #include "./tstr.h"
 
 
-#if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L)
-    #define TSTR_UNREACHABLE() unreachable()
+#if defined(__GNUC__) || defined(__clang__)
+	#define TSTR_UNREACHABLE() __builtin_unreachable()
+#elif defined(_MSC_VER)
+	#define TSTR_UNREACHABLE() __assume(0)
 #else
-	#if defined(__GNUC__) || defined(__clang__)
-		#define TSTR_UNREACHABLE() __builtin_unreachable()
-	#elif defined(_MSC_VER)
-		#define TSTR_UNREACHABLE() __assume(0)
-	#else
-		#include <stdlib.h>
-		#define TSTR_UNREACHABLE() abort()
-	#endif
+	#include <stdlib.h>
+	#define TSTR_UNREACHABLE() abort()
 #endif
+
 
 // Returns true if the string is heap-allocated.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_is_long(const tstr* str) {
