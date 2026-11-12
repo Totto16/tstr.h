@@ -238,6 +238,10 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_is_sso(const tstr* str);
 
 #endif
 
+// Returns true if the string is allocated and uses memory
+TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_holds_memory(const tstr* str);
+
+
 // Returns true if the string is a static string, alias not modifiable
 TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_is_static(const tstr* str);
 
@@ -261,8 +265,12 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_static_is_null(tstr_static str);
 
 /* Creation and Destruction */
 
+#ifndef TSTR_DONT_USE_SHORT_STRINGS
+
 // Initializes an empty string {0}.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_init(void);
+
+#endif
 
 // Initializes a string with ptr set to NULL
 TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_null(void);
