@@ -124,7 +124,7 @@ extern "C" {
 	#define TSTR_PRINTF_ATTR(fmt_idx, var_idx)
 #endif
 
-#ifndef TSTR_DONT_USE_SHORT_STRINGS 
+#ifndef TSTR_DONT_USE_SHORT_STRINGS
 
 // SSO Capacity -> 23 bytes available.
 // Max string length = 23 chars (if using the last byte for length/flag trick)
@@ -241,7 +241,6 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_is_sso(const tstr* str);
 // Returns true if the string is allocated and uses memory
 TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_holds_memory(const tstr* str);
 
-
 // Returns true if the string is a static string, alias not modifiable
 TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_is_static(const tstr* str);
 
@@ -310,7 +309,6 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_from(const char* cstr);
 // close extern "C"
 }
 
-
 [[nodiscard]] static constexpr tstr operator""_tstr(const char* str, std::size_t len) {
 	tstr result = {};
 	result.type.inner = tstr_type_enum_static;
@@ -325,6 +323,11 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_from(const char* cstr);
 	return result;
 }
 
+[[nodiscard]] static constexpr tstr_view operator""_tstr_view(const char* str, std::size_t len) {
+	const tstr_view result = { .data = str, .len = len };
+	return result;
+}
+
 // new extern "C"
 extern "C" {
 
@@ -333,6 +336,9 @@ extern "C" {
 
 	#define TSTR_LIT(str) str##_tstr
 	#define TSTR_LIT_CONST(str) TSTR_LIT(str)
+
+	#define TSTR_VIEW_LIT(str) str##_tstr_view
+	#define TSTR_VIEW_LIT_CONST(str) TSTR_VIEW_LIT(str)
 
 #else
 
@@ -351,6 +357,9 @@ extern "C" {
 		((tstr){ .type = { .inner = tstr_type_enum_static }, \
 		         .static_str = (tstr_static){ .ptr = (str), .len = TSTR_SIZE_OF_STR_LIT(str) } })
 
+    // Helper macro to create a view from a string literal.
+	#define TSTR_VIEW_LIT(str) ((tstr_view){ .data = (str), .len = TSTR_SIZE_OF_STR_LIT(str) })
+
 	#if defined(__GNUC__) && (!(defined(__clang__)))
 		#define TSTR_STATIC_LIT_CONST(str) { .ptr = (str), .len = TSTR_SIZE_OF_STR_LIT(str) }
 
@@ -361,9 +370,13 @@ extern "C" {
 					.len = TSTR_SIZE_OF_STR_LIT(str) \
 				} \
 			}
+
+		#define TSTR_VIEW_LIT_CONST(str) { .data = (str), .len = TSTR_SIZE_OF_STR_LIT(str) }
+
 	#else
 		#define TSTR_STATIC_LIT_CONST(str) TSTR_STATIC_LIT(str)
 		#define TSTR_LIT_CONST(str) TSTR_LIT(str)
+		#define TSTR_VIEW_LIT_CONST(str) TSTR_VIEW_LIT(str)
 	#endif
 
 #endif
@@ -491,7 +504,7 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_is_valid_utf8(const tstr* str);
 /* Views and Slices (Zero-Copy) */
 
 // Helper macro to create a view from a string literal.
-#define TSTR_TSV(lit) ((tstr_view){ .data = (lit), .len = TSTR_SIZE_OF_STR_LIT(lit) })
+#define TSTR_TSV(lit) TSTR_VIEW_LIT(lit)
 
 #define TSTR_EMPTY_VIEW (tstr_view){ .data = NULL, .len = 0 }
 
