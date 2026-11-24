@@ -126,10 +126,10 @@ extern "C" {
 
 #ifndef TSTR_DONT_USE_SHORT_STRINGS
 
-// SSO Capacity -> 23 bytes available.
-// Max string length = 23 chars (if using the last byte for length/flag trick)
-// OR 22 chars + null terminator. We stick to 23 bytes total storage.
-#define TSTR_SSO_CAP 23
+    // SSO Capacity -> 23 bytes available.
+    // Max string length = 23 chars (if using the last byte for length/flag trick)
+    // OR 22 chars + null terminator. We stick to 23 bytes total storage.
+	#define TSTR_SSO_CAP 23
 #endif
 
 #define TSTR_UTF8_INVALID 0xFFFD

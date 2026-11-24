@@ -1,6 +1,5 @@
 #include "./tstr.h"
 
-
 #if defined(__GNUC__) || defined(__clang__)
 	#define TSTR_UNREACHABLE() __builtin_unreachable()
 #elif defined(_MSC_VER)
@@ -9,7 +8,6 @@
 	#include <stdlib.h>
 	#define TSTR_UNREACHABLE() abort()
 #endif
-
 
 // Returns true if the string is heap-allocated.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_is_long(const tstr* str) {
@@ -26,7 +24,7 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_is_sso(const tstr* str) {
 #endif
 
 // Returns true if the string is allocated and uses memory
-TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_holds_memory(const tstr* str){
+TSTR_FUN_ATTRIBUTES [[nodiscard]] bool tstr_holds_memory(const tstr* str) {
 	switch(str->type.inner) {
 #ifndef TSTR_DONT_USE_SHORT_STRINGS
 		case tstr_type_enum_sso: return false;
@@ -134,7 +132,6 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_init(void) {
 	return str;
 }
 
-
 #endif
 
 // Initializes an string with ptr set to NULL
@@ -158,8 +155,8 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr_static tstr_static_null(void) {
 
 // Frees the string if it is on the heap, and resets it to empty.
 TSTR_FUN_ATTRIBUTES void tstr_free(tstr* const str) {
-#ifndef TSTR_DONT_USE_SHORT_STRINGS	
-	if(str->type.inner == tstr_type_enum_sso){ 
+#ifndef TSTR_DONT_USE_SHORT_STRINGS
+	if(str->type.inner == tstr_type_enum_sso) {
 		*str = tstr_init();
 		return;
 	}
@@ -241,14 +238,12 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] TStrResult tstr_reserve(tstr* const str, size_
 #else
 
 	if(str->type.inner == tstr_type_enum_long) {
-		if(new_cap != 0 && new_cap <= str->long_str.cap){
+		if(new_cap != 0 && new_cap <= str->long_str.cap) {
 			return TStrResultOk;
 		}
 	}
 
 #endif
-
-
 
 	char* new_ptr;
 	if(str->type.inner == tstr_type_enum_long) {
@@ -290,12 +285,11 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] TStrResult tstr_reserve(tstr* const str, size_
 #ifndef TSTR_DONT_USE_SHORT_STRINGS
 // Creates a new empty string with pre-allocated capacity on the heap.
 TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_with_capacity(size_t cap) {
-#ifndef TSTR_DONT_USE_SHORT_STRINGS
+	#ifndef TSTR_DONT_USE_SHORT_STRINGS
 	tstr str = tstr_init();
-#else
+	#else
 	tstr str = tstr_null();
-#endif
-
+	#endif
 
 	static_assert(TSTR_SSO_CAP > 0);
 	if(cap >= TSTR_SSO_CAP) {
@@ -321,7 +315,6 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_with_capacity(size_t cap) {
 }
 
 #endif
-
 
 // Reduces heap usage to fit the exact string length (or moves back to SSO if small enough).
 TSTR_FUN_ATTRIBUTES void tstr_shrink_to_fit(tstr* const str) {
@@ -367,7 +360,7 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_from_len(const char* ptr, size_t len
 #endif
 
 #ifndef TSTR_DONT_USE_SHORT_STRINGS
-		static_assert(TSTR_SSO_CAP > 0);
+	static_assert(TSTR_SSO_CAP > 0);
 	if(len >= TSTR_SSO_CAP) {
 #else
 	if(true) {
@@ -378,7 +371,7 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_from_len(const char* ptr, size_t len
 		memcpy(str.long_str.ptr, ptr, len);
 		str.long_str.ptr[len] = '\0';
 		str.long_str.len = len;
-	} 
+	}
 #ifndef TSTR_DONT_USE_SHORT_STRINGS
 	else {
 		memcpy(str.short_str.buf, ptr, len);
@@ -475,7 +468,7 @@ TSTR_FUN_ATTRIBUTES [[nodiscard]] tstr tstr_own(char* ptr, size_t len, size_t ca
 		str.type.inner = tstr_type_enum_sso;
 		T_STR_FREE(ptr);
 #else
-	if(false){
+	if(false) {
 #endif
 	} else {
 		str.type.inner = tstr_type_enum_long;
