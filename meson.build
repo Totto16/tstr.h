@@ -15,6 +15,11 @@ project(
 )
 
 
+if host_machine.system() == 'windows'
+    error('Windows is currently not supported')
+endif
+
+
 inc_dirs = []
 src_files = []
 
