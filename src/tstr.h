@@ -142,6 +142,15 @@ extern "C" {
 	#define TSV_FMT_ARGS(str_vw) ((int)(str_vw).len), ((str_vw).data)
 #endif
 
+#ifdef _TSTR_COMPILE_WITH_NARROWED_ENUMS
+	#define TSTR_C_23_NARROW_ENUM_TO(x) : x
+	#define TSTR_C_23_ENUM_TYPE(x) x
+
+#else
+	#define TSTR_C_23_NARROW_ENUM_TO(x)
+	#define TSTR_C_23_ENUM_TYPE(x) int
+#endif
+
 // Alias macro for pushing a single char.
 #define tstr_push(str, chr) tstr_push_char(str, chr)
 
@@ -170,7 +179,7 @@ typedef struct {
 	size_t len;
 } tstr_static;
 
-typedef enum : uint8_t {
+typedef enum TSTR_C_23_NARROW_ENUM_TO(uint8_t) {
 #ifndef TSTR_DONT_USE_SHORT_STRINGS
 	tstr_type_enum_sso = 0,
 #endif
@@ -218,7 +227,7 @@ typedef struct {
 	tstr_view second;
 } tstr_split_result;
 
-typedef enum : bool {
+typedef enum TSTR_C_23_NARROW_ENUM_TO(bool) {
 	TStrResultErr = false,
 	TStrResultOk = true,
 } TStrResult;
