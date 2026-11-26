@@ -149,11 +149,11 @@ extern "C" {
 
 #if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202000) || defined(__cplusplus)
 	#define TSTR_NODISCARD [[nodiscard]]
-	#define TSTR_STATIC_ASSERT static_assert
+	#define TSTR_STATIC_ASSERT(val, msg) static_assert(val, msg)
 #else
     // see e.g. https://www.gnu.org/software/gnulib/manual/html_node/Attributes.html
 	#define TSTR_NODISCARD __attribute__((__warn_unused_result__))
-	#define TSTR_STATIC_ASSERT _Static_assert
+	#define TSTR_STATIC_ASSERT(val, msg) _Static_assert(val, msg)
 #endif
 
 // Alias macro for pushing a single char.
@@ -198,7 +198,7 @@ typedef struct {
 } tstr_type;
 
 // assert that the type is the appropiate size
-TSTR_STATIC_ASSERT(sizeof(tstr_type) == sizeof(void*));
+TSTR_STATIC_ASSERT(sizeof(tstr_type) == sizeof(void*), "padding incorrectly determined");
 
 // The main string type.
 typedef struct {
