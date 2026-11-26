@@ -173,7 +173,7 @@ TSTR_FUN_ATTRIBUTES void tstr_clear(tstr* const str) {
 #ifndef TSTR_DONT_USE_SHORT_STRINGS
 		case tstr_type_enum_sso: {
 			str->short_str.len = 0;
-			static_assert(TSTR_SSO_CAP > 0);
+			TSTR_STATIC_ASSERT(TSTR_SSO_CAP > 0, "cap has to be greater then 0");
 			str->short_str.buf[0] = '\0';
 			break;
 		}
@@ -187,7 +187,7 @@ TSTR_FUN_ATTRIBUTES void tstr_clear(tstr* const str) {
 #ifndef TSTR_DONT_USE_SHORT_STRINGS
 			str->type.inner = tstr_type_enum_sso;
 			str->short_str.len = 0;
-			static_assert(TSTR_SSO_CAP > 0);
+			TSTR_STATIC_ASSERT(TSTR_SSO_CAP > 0, "cap has to be greater then 0");
 			str->short_str.buf[0] = '\0';
 #else
 			str->type.inner = tstr_type_enum_static;
@@ -226,7 +226,7 @@ TSTR_FUN_ATTRIBUTES TSTR_NODISCARD TStrResult tstr_reserve(tstr* const str, size
 	}
 
 #ifndef TSTR_DONT_USE_SHORT_STRINGS
-	static_assert(TSTR_SSO_CAP > 0);
+	TSTR_STATIC_ASSERT(TSTR_SSO_CAP > 0, "cap has to be greater then 0");
 	if(new_cap < TSTR_SSO_CAP) {
 		return TStrResultOk;
 	}
@@ -291,7 +291,7 @@ TSTR_FUN_ATTRIBUTES TSTR_NODISCARD tstr tstr_with_capacity(size_t cap) {
 	tstr str = tstr_null();
 	#endif
 
-	static_assert(TSTR_SSO_CAP > 0);
+	TSTR_STATIC_ASSERT(TSTR_SSO_CAP > 0, "cap has to be greater then 0");
 	if(cap >= TSTR_SSO_CAP) {
 		const TStrResult result = tstr_reserve(&str, cap);
 		if(result != TStrResultOk) {
@@ -324,7 +324,7 @@ TSTR_FUN_ATTRIBUTES void tstr_shrink_to_fit(tstr* const str) {
 
 #ifndef TSTR_DONT_USE_SHORT_STRINGS
 	// Downgrade to SSO if possible.
-	static_assert(TSTR_SSO_CAP > 0);
+	TSTR_STATIC_ASSERT(TSTR_SSO_CAP > 0, "cap has to be greater then 0");
 	if(str->long_str.len < TSTR_SSO_CAP) {
 		char temp[TSTR_SSO_CAP];
 		memcpy(temp, str->long_str.ptr, str->long_str.len);
@@ -360,7 +360,7 @@ TSTR_FUN_ATTRIBUTES TSTR_NODISCARD tstr tstr_from_len(const char* ptr, size_t le
 #endif
 
 #ifndef TSTR_DONT_USE_SHORT_STRINGS
-	static_assert(TSTR_SSO_CAP > 0);
+	TSTR_STATIC_ASSERT(TSTR_SSO_CAP > 0, "cap has to be greater then 0");
 	if(len >= TSTR_SSO_CAP) {
 #else
 	if(true) {
@@ -395,7 +395,7 @@ TSTR_FUN_ATTRIBUTES TSTR_NODISCARD tstr tstr_from_static_cstr(const char* str) {
 
 // Initializes a static string with length as tstr.
 TSTR_FUN_ATTRIBUTES TSTR_NODISCARD tstr tstr_from_static_cstr_with_len(const char* cstr,
-                                                                      size_t len) {
+                                                                       size_t len) {
 #ifndef TSTR_DONT_USE_SHORT_STRINGS
 	tstr str = tstr_init();
 #else
@@ -651,7 +651,7 @@ TSTR_FUN_ATTRIBUTES TSTR_NODISCARD char tstr_pop_char(tstr* str) {
 
 // Appends a raw char buffer of known length.
 TSTR_FUN_ATTRIBUTES TSTR_NODISCARD TStrResult tstr_cat_len(tstr* const str, const char* src,
-                                                          size_t src_len) {
+                                                           size_t src_len) {
 	if(str->type.inner == tstr_type_enum_static) {
 		tstr_attempt_static_string_modification(str);
 	}
@@ -710,7 +710,7 @@ TSTR_FUN_ATTRIBUTES TSTR_NODISCARD TStrResult tstr_cat(tstr* str, const char* cs
 
 // Joins an array of strings with a delimiter.
 TSTR_FUN_ATTRIBUTES TSTR_NODISCARD tstr tstr_join(const char** strings, size_t count,
-                                                 const char* delim) {
+                                                  const char* delim) {
 #ifndef TSTR_DONT_USE_SHORT_STRINGS
 	tstr str = tstr_init();
 #else
@@ -876,7 +876,7 @@ TSTR_FUN_ATTRIBUTES void tstr_trim(tstr* const str) {
 // Replaces all occurrences of "target" with "replacement".
 // This may reallocate the string if the size grows.
 TSTR_FUN_ATTRIBUTES TSTR_NODISCARD TStrResult tstr_replace(tstr* str, const char* target,
-                                                          const char* replacement) {
+                                                           const char* replacement) {
 	if(!target || !*target) {
 		return TStrResultErr;
 	}
@@ -963,7 +963,7 @@ TSTR_FUN_ATTRIBUTES TSTR_NODISCARD bool tstr_eq(const tstr* const str1, const ts
 
 // Checks equality between a tstr and a cstr.
 TSTR_FUN_ATTRIBUTES TSTR_NODISCARD bool tstr_eq_cstr(const tstr* const str1,
-                                                    const char* const str2) {
+                                                     const char* const str2) {
 	size_t la = tstr_len(str1);
 	size_t lb = strlen(str2);
 	if(la != lb) {
@@ -974,7 +974,7 @@ TSTR_FUN_ATTRIBUTES TSTR_NODISCARD bool tstr_eq_cstr(const tstr* const str1,
 
 // Checks equality between a tstr and a tstr_static.
 TSTR_FUN_ATTRIBUTES TSTR_NODISCARD bool tstr_eq_static_tstr(const tstr* const str1,
-                                                           const tstr_static str2) {
+                                                            const tstr_static str2) {
 	size_t la = tstr_len(str1);
 	size_t lb = str2.len;
 
@@ -1004,7 +1004,7 @@ TSTR_FUN_ATTRIBUTES TSTR_NODISCARD bool tstr_eq_ignore_case(const tstr* str1, co
 
 // Checks equality ignoring case (ASCII only).
 TSTR_FUN_ATTRIBUTES TSTR_NODISCARD bool tstr_eq_ignore_case_cstr(const tstr* const str1,
-                                                                const char* const str2) {
+                                                                 const char* const str2) {
 	size_t len = tstr_len(str1);
 	if(len != strlen(str2)) {
 		return false;
@@ -1022,7 +1022,7 @@ TSTR_FUN_ATTRIBUTES TSTR_NODISCARD bool tstr_eq_ignore_case_cstr(const tstr* con
 
 // Checks equality ignoring case (ASCII only).
 TSTR_FUN_ATTRIBUTES TSTR_NODISCARD bool tstr_eq_ignore_case_static_tstr(const tstr* const str1,
-                                                                       const tstr_static str2) {
+                                                                        const tstr_static str2) {
 	size_t len = tstr_len(str1);
 	if(len != str2.len) {
 		return false;
@@ -1046,7 +1046,7 @@ TSTR_FUN_ATTRIBUTES TSTR_NODISCARD int tstr_cmp(const tstr* str1, const tstr* st
 
 // Checks equality between two tstr_static objects (faster than strcmp).
 TSTR_FUN_ATTRIBUTES TSTR_NODISCARD bool tstr_static_eq(const tstr_static str1,
-                                                      const tstr_static str2) {
+                                                       const tstr_static str2) {
 	if(str1.len != str2.len) {
 		return false;
 	}
@@ -1055,7 +1055,7 @@ TSTR_FUN_ATTRIBUTES TSTR_NODISCARD bool tstr_static_eq(const tstr_static str1,
 
 // Checks equality between a tstr_static and a cstr.
 TSTR_FUN_ATTRIBUTES TSTR_NODISCARD bool tstr_static_eq_cstr(const tstr_static str1,
-                                                           const char* const str2) {
+                                                            const char* const str2) {
 	const size_t lb = strlen(str2);
 	if(str1.len != lb) {
 		return false;
@@ -1255,7 +1255,7 @@ TSTR_FUN_ATTRIBUTES TSTR_NODISCARD bool tstr_view_eq(tstr_view view, const char*
 
 // Checks if two views are equal, ignoring case (ASCII only).
 TSTR_FUN_ATTRIBUTES TSTR_NODISCARD bool tstr_view_eq_ignore_case(const tstr_view view1,
-                                                                const tstr_view view2) {
+                                                                 const tstr_view view2) {
 	if(view1.len != view2.len) {
 		return false;
 	}
@@ -1270,7 +1270,7 @@ TSTR_FUN_ATTRIBUTES TSTR_NODISCARD bool tstr_view_eq_ignore_case(const tstr_view
 
 // Checks if view equals a C-string, ignoring case (ASCII only).
 TSTR_FUN_ATTRIBUTES TSTR_NODISCARD bool tstr_view_eq_ignore_case_cstr(const tstr_view view,
-                                                                     const char* const cstr) {
+                                                                      const char* const cstr) {
 	if(strlen(cstr) != view.len) {
 		return false;
 	}
@@ -1388,14 +1388,15 @@ TSTR_FUN_ATTRIBUTES TSTR_NODISCARD bool tstr_view_to_int(tstr_view view, int* ou
 
 // Initializes an iterator for splitting a string.
 TSTR_FUN_ATTRIBUTES TSTR_NODISCARD tstr_split_iter tstr_split_init(tstr_view src,
-                                                                  const char* delim) {
+                                                                   const char* delim) {
 	return (tstr_split_iter){
 		.source = src, .delim = tstr_view_from(delim), .current_pos = 0, .finished = false
 	};
 }
 
 // Gets the next part in a split iteration. Returns false when done.
-TSTR_FUN_ATTRIBUTES TSTR_NODISCARD bool tstr_split_next(tstr_split_iter* iter, tstr_view* out_part) {
+TSTR_FUN_ATTRIBUTES TSTR_NODISCARD bool tstr_split_next(tstr_split_iter* iter,
+                                                        tstr_view* out_part) {
 	if(iter->finished) {
 		return false;
 	}
