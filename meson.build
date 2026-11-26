@@ -15,8 +15,14 @@ project(
 )
 
 
+if host_machine.system() == 'windows'
+    error('Windows is currently not supported')
+endif
+
+
 inc_dirs = []
 src_files = []
+compile_flags = []
 
 subdir('src')
 
@@ -38,10 +44,8 @@ endif
 
 use_short_strings = get_option('use_short_strings')
 
-compile_args = []
-
 if not use_short_strings
-    compile_args += '-DTSTR_DONT_USE_SHORT_STRINGS'
+    compile_flags += '-DTSTR_DONT_USE_SHORT_STRINGS'
 endif
 
 
@@ -51,14 +55,14 @@ tstr_lib = library(
     include_directories: inc_dirs,
     install: true,
     version: meson.project_version(),
-    c_args: [c_args, compile_args],
+    c_args: [c_args, compile_flags],
 )
 
 tstr_dep = declare_dependency(
     link_with: tstr_lib,
     include_directories: inc_dirs,
     version: meson.project_version(),
-    compile_args: compile_args,
+    compile_args: compile_flags,
 )
 
 meson.override_dependency('tstr.h', tstr_dep)

@@ -10,3 +10,13 @@ install_headers(
     preserve_path: true,
 )
 
+
+cc = meson.get_compiler('c')
+
+stdc_version = cc.get_define('__STDC_VERSION__ ')
+stdc_version_int = stdc_version.replace('L', '').to_int()
+if stdc_version_int >= 202000
+    compile_flags += '-D_TSTR_COMPILE_WITH_NARROWED_ENUMS'
+endif
+
+inc_dirs += include_directories('.')
