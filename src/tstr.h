@@ -149,9 +149,11 @@ extern "C" {
 
 #if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202000) || defined(__cplusplus)
 	#define TSTR_NODISCARD [[nodiscard]]
+	#define TSTR_STATIC_ASSERT static_assert
 #else
     // see e.g. https://www.gnu.org/software/gnulib/manual/html_node/Attributes.html
 	#define TSTR_NODISCARD __attribute__((__warn_unused_result__))
+	#define TSTR_STATIC_ASSERT _Static_assert
 #endif
 
 // Alias macro for pushing a single char.
@@ -196,7 +198,7 @@ typedef struct {
 } tstr_type;
 
 // assert that the type is the appropiate size
-static_assert(sizeof(tstr_type) == sizeof(void*));
+TSTR_STATIC_ASSERT(sizeof(tstr_type) == sizeof(void*));
 
 // The main string type.
 typedef struct {
